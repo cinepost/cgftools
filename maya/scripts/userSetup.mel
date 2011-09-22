@@ -1,3 +1,0 @@
-$cgftools_home = "/home/max/dev/cgftools/maya/tools";
-
-source($cgftools_home + "/mel/buildShelf.mel");

@@ -1,0 +1,14 @@
+if(`shelfLayout -exists "cgfTools"` == 0){
+	addNewShelfTab "cgfTools";
+		
+	$cgfShelf = `shelfLayout -query -fullPathName "cgfTools"`;
+	
+	shelfButton
+		-parent $cgfShelf
+		-annotation "Submit rendering to HQueue server."
+	    -image "hqrender_32.png" 
+	    -style "iconOnly"
+	    -sourceType "python"
+	    -command "hqrender.open()" 
+	    -label "HQrenderButton";
+}
