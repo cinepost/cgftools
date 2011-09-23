@@ -1,5 +1,8 @@
+import os
+import sip
 import cPickle
 import maya.cmds as mc
+import maya.OpenMayaUI as mui
 
 def pyToAttr(objAttr, data):
 	obj, attr = objAttr.split('.')
@@ -19,3 +22,8 @@ def attrToPy(objAttr):
 	loadedData = cPickle.loads(stringAttrData)
 
 	return loadedData
+
+def getMayaWindow():
+	'Get the maya main window as a QMainWindow instance'
+	ptr = mui.MQtUtil.mainWindow()
+	return sip.wrapinstance(long(ptr), QtCore.QObject)
