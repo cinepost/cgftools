@@ -1,4 +1,9 @@
 from hqcommon import *
 
-def open():
-	return HQrenderDialog().showModalDialog()	
+def renderSelected(selected=True):
+	hqdialog = HQrenderDialog('selected')
+	return hqdialog.showModalDialog()	
+
+def renderAll():
+	hqdialog = HQrenderDialog('all')
+	return hqdialog.showModalDialog()	
