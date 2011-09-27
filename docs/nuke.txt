@@ -1,0 +1,28 @@
+NUKE HQueue rendering.
+
+Installation notes:
+
+	Client side:
+
+	LINUX:
+		1. Append Nuke installation folder to HQueue client user environment variable PATH. For example if your HQueue client installation uses user named "hquser" and your Nuke
+		installation folder is /opt/Nuke6.2v1 then your should append it to PATH variable in .bashrc file locaten in hquser home directory. Like this:
+			export PATH=${PATH}:/opt/Nuke6.2v1
+
+		2. During rendering process Nuke uses local temporary storage /tmp/nuke. By default	this path is owned by root, so we need to grant access for hquser so it can
+		write to this folder. It's possible to be done by executing following command: 
+			sudo chmod -R 777 /tmp/nuke/
+			
+		3. Copy or symlink all of the files inside cgftools/nuke folder into /home/your_user/.nuke/ folder. Please note that on render nodes "your_user" is HQueue user, in
+		our case it's "hquser"
+
+
+	Server side:
+		Needed packages:
+			python-mysqldb
+	
+		1. It's allways a good idea to use MySQL instead of SQLite, so you need to change sqlalchemy.default.url variable in your hqserver.ini to this:
+			sqlalchemy.default.url = mysql://username:password@host:port/database
+		Also uncomment these two lines:	
+			sqlalchemy.default.pool_size = 30
+			sqlalchemy.default.max_overflow = 20

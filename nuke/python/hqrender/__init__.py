@@ -1,4 +1,4 @@
-from hqcommon import *
+from hqdialog import *
 
 def renderSelected(selected=True):
 	hqdialog = HQrenderDialog('selected')

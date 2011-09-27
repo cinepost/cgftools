@@ -1,10 +1,8 @@
 import os, sys
-cgftools_home = "/home/max/dev/cgftools"
 pymodules_path = "/usr/lib/pymodules/python2.6"
 
-os.environ['CGFTOOLS_HOME'] = cgftools_home
-sys.path.append(cgftools_home + '/common/tools/python')
-sys.path.append(cgftools_home + '/nuke/tools/python')
+home = os.environ.get('HOME')
+sys.path.append(home + '/.nuke/python/')
 sys.path.append(pymodules_path)
 
 #nuke.pluginAddPath(searchPath)
