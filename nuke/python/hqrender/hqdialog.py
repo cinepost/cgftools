@@ -51,20 +51,42 @@ def readXMLtoState( xml, state ):
 		else:	
 			state.saveValue(child.getAttribute('name'), readXMLElement(child))		
 		
+class HQClientGroupsDialog ( nukescripts.PythonPanel ):
+	def __init__(self, mode, settings={}):
+		import xmlrpclib
+		server_addr = "http://%s" % settings.get('server', 'localhost:5000')
+		hq_server = xmlrpclib.ServerProxy( server_addr )
+		try:
+			hq_server.ping()
+		except:
+			raise BaseException("Unable to coonect HQueue server: %s" % server_addr)
+		else:
+			if mode == 'clients':
+				title = "Select Clients"
+				items = hq_server.getClients()
+			else:		
+				title = "Select Client Groups"
+				items = hq_server.getClientGroups()
+				
+			entries = []	
+			for item in items:
+				entry += nuke.Boolean_Knob(item, item)
+				self.addKnob( self.entry )
+				
+				
 class HQrenderDialog( nukescripts.PythonPanel ):
-	def __init__(self, mode=False):
+	def __init__(self, mode ):
 		self._state = _hqRenderDialogState
-		
+		self.hqmode = mode
 		hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/python/hqrender/hqrenderConfig.xml'))
 		readXMLtoState(hqrenderConfig, self._state)
-		self.input_node = nuke.selectedNode()
 		
-		if mode == 'selected':
+		if self.hqmode == 'selected':
 			title = "HQrender Selected"
+			self.input_node = nuke.selectedNode()
 		else:
 			title = "HQrender All"
-			
-		#nuke.Root().addKnob(nuke.String_Knob('hqcfg', 'HQueue Render Conf', 'lala2323'))
+			self.input_node = None
 		
 		try:
 			stored_cfg = nuke.knob('root.hqcfg')
@@ -172,6 +194,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.mode.setValue(self._state.get(self.mode, 0))
 		self.project.setValue(self._state.get(self.project, "$HQROOT/projects"))
 		self.savescript.setValue(self._state.get(self.savescript, True))
+		self.fperjob.setValue(self._state.get(self.fperjob, 1))
         
         # Update UI
 		self.updateScriptMode()
@@ -259,30 +282,50 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			f1 = self.f1.value()
 			f2 = self.f2.value()
 			f3 = self.f3.value()
+			frames_per_job = self.fperjob.value()
 			nuke_exec = self.nukexec.value()
 			
-			curScript = nuke.toNode("root").name()
-			if self.savescript.value():
-				if curScript in ["", "Root"]:
-					# TODO: save untitled script into HQ shared folder. May be hidden...
-					import uuid
-					uid = uuid.uuid1()
-					curScript = "/tmp/_nuke_tempScript_%s.nk" % uid
-					
-				nuke.scriptSaveAs(curScript)	
+			out_nodes = ""
+			if self.hqmode == 'selected':
+				#out_nodes = str([n.name() for n in nuke.selectedNodes()])
+				for n in nuke.selectedNodes():
+					out_nodes += "%s;" % n.name()
 			
+			curScript = nuke.toNode("root").name()
+			if self.mode.value() == "Render Current Script File":
+				if self.savescript.value():
+					if curScript in ["", "Root"]:
+						# TODO: save untitled script into HQ shared folder. May be hidden...
+						import uuid
+						uid = uuid.uuid1()
+						curScript = "/tmp/_nuke_tempScript_%s.nk" % uid
+						
+					nuke.scriptSaveAs(curScript)	
+			elif self.mode.value() == "Render Target Script File":
+				curScript = self.tscript.value()
+				
 			job_frames = []
-			for frame in range(f1, f2, f3):
-				rcmd  = '%s -t ~/.nuke/python/hqrender/render.py %s -f1 %d' % (nuke_exec, curScript, frame)  
-				job_frames += [{
-					'name'		:	'Rendering %s script' % curScript,
-					'shell'		:	'bash',
-					'command'	:	rcmd	
-				}]
+			for frame in range(f1, f2, frames_per_job):
+				job = {}
+				job['name'] = 'Rendering %s script in range %d-%dx%d' % (curScript, frame, frame + frames_per_job - 1, f3)
+				job['shell'] ='bash'
+				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_exec, frame, frame + frames_per_job - 1, f3, curScript)  
+				job['environment'] = {
+					"HQ_NK_NODES"	: out_nodes,
+					"HQ_NK_MODE"	: self.hqmode,
+					"HQ_NK_PATHS"	: pickle.dumps(self._state.getValue('cross_path',[]))
+				}
+				job['triesLeft'] = self._state.getValue('triesLeft',2)
+				job_frames += [job]
 			
 			job_spec = {
-				'name'	:	'Nuke script',
+				'name'	:	'Nuke script %s by %s' % (curScript, os.environ.get('USERNAME')),
 				'priority': self.priority.value(),
+				'conditions' : [],
 				'children': job_frames
 			}
+			if self.assignto.value() == 1:
+				job_spec['conditions'] += [{"type" : "client", "name":"hostname", "op":"any", "value":self.clients.value()}]
+			elif self.assignto.value() == 2:
+				job_spec['conditions'] += [{"type" : "client", "name":"group", "op":"==", "value":self.groups.value()}]
 			job_id = hq_server.newjob(job_spec)						

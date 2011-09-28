@@ -1,6 +1,16 @@
-import nuke
-import os
-import sys
+import nuke, os, sys
+import getopt 
+import cPickle as pickle
+OSX = False
+WIN = False
+LIN = False
+
+if nuke.env["LINUX"]:
+	LIN = True
+elif nuke.env["WIN32"]:
+	WIN = True
+else:
+	OSX = True	
 
 def RecursiveFindNodes(nodeClasses, startNode):
     if startNode.Class() in nodeClasses:
@@ -16,31 +26,46 @@ def fixOSPaths( nodes, inPattern, outPattern ):
 		path = path.replace( inPattern, outPattern )
 		node['file'].setValue( path )
 
-if len ( sys.argv ) != 4:
-  print 'Usage: NUKE render.py <nuke_script> <in_file_pattern> <new_file_pattern>'
-  sys.exit(-1)
+sys.stdout.write('ARGV       : %s \n' % sys.argv[1:])
+options, reminder = getopt.getopt(sys.argv[1:], 's:e:i:', ['--f1', '--f2', '--f3'])
+sys.stdout.write('OPTIONS    : %s \n' % options)
+for opt, arg in options:
+	if opt in ('-s', '--f1'):
+		f1 = int(arg)
+	elif opt in ('-e', '--f2'):
+		f2 = int(arg)
+	elif opt in ('-i', '--f3'):
+		f3 = int(arg)		
 
-inScript = sys.argv[1]
-inPattern = sys.argv[2]
-outPattern = sys.argv[3]
+inScript = sys.argv[-1]
 
 # Open .nk script
 nuke.scriptOpen( inScript )
+sys.stdout.write('Using script: %s \n' % inScript)
+
+# Read hidden conf node
+try:
+	conf = pickle.loads(nuke.knob('root.hqcfg'))
+except:
+	raise BaseException('Unable to load HQrender configuration from script !!!')
+
+mapping = conf.get('cross_path')
+mode = os.environ.get('HQ_NK_MODE')
+out_nodes = [w for w in RecursiveFindNodes(['Write'], nuke.root())]
+if mode == 'selected':
+	nk_nodes = os.environ.get('HQ_NK_NODES')
+	if nk_nodes: # Convert string fo form "word1;word2;word3" to list ["word1", "word2", "word3"]
+		node_names_to_process = filter( lambda a: a!="", nk_nodes.split(';'))
+		out_nodes = [nuke.toNode(n) for n in node_names_to_process]
+
+sys.stdout.write('Rendering %s nodes: %s \n' % (mode, [node.name() for node in out_nodes]))
+	
 
 allReadWriteNodes = [w for w in RecursiveFindNodes(['Write','Read'], nuke.root())]
-fixOSPaths( allReadWriteNodes, inPattern, outPattern )
+##fixOSPaths( allReadWriteNodes, inPattern, outPattern )
 
 # Render needed nodes
-frame_range = range(f1, f2, f3)
-
-mode = 'all'
-if mode == 'all':
-	out_nodes = RecursiveFindNodes(['Write'], nuke.root())
-else:
-	out_nodes = None
-
 if out_nodes:
 	for node in out_nodes:
-		for frame in frame_range:
-			nuke.execute( nodeName, frame, frame )
+		nuke.execute( node, f1, f2, f3 )
 		
