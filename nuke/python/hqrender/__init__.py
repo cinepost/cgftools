@@ -1,9 +1,9 @@
 from hqdialog import *
 
 def renderSelected(selected=True):
-	hqdialog = HQrenderDialog('selected')
-	return hqdialog.showModalDialog()	
+	hqRender = HQrenderDialog('selected')
+	return hqRender.showModalDialog()	
 
 def renderAll():
-	hqdialog = HQrenderDialog('all')
-	return hqdialog.showModalDialog()	
+	hqRender = HQrenderDialog('all')
+	return hqRender.showModalDialog()	

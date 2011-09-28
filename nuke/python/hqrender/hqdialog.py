@@ -1,7 +1,15 @@
 import os, sys, nuke, nukescripts
 from xml.dom import minidom, Node		
 import cPickle as pickle
+	
+OS_ENV = ""		
 		
+if nuke.env["LINUX"]:
+	OS_ENV = "LINUX"
+elif nuke.env["WIN32"]:
+	OS_ENV = "WIN32"
+else:
+	OS_ENV = "OSX"			
 		
 class DialogState:
 	def __init__(self):
@@ -49,12 +57,16 @@ def readXMLtoState( xml, state ):
 		if child.nodeType != Node.ELEMENT_NODE:
 			continue
 		else:	
-			state.saveValue(child.getAttribute('name'), readXMLElement(child))		
+			state.saveValue(child.getAttribute('name'), readXMLElement(child))				
+		
+def getClientsFromServer():		
+	dialog = HQClientGroupsDialog( mode='clients' )
+	return dialog.showModalDialog()			
 		
 class HQClientGroupsDialog ( nukescripts.PythonPanel ):
-	def __init__(self, mode, settings={}):
+	def __init__(self, mode='clients', server='localhost:5000', dialog=None, initlist = []):
 		import xmlrpclib
-		server_addr = "http://%s" % settings.get('server', 'localhost:5000')
+		server_addr = "http://%s" % server
 		hq_server = xmlrpclib.ServerProxy( server_addr )
 		try:
 			hq_server.ping()
@@ -67,12 +79,18 @@ class HQClientGroupsDialog ( nukescripts.PythonPanel ):
 			else:		
 				title = "Select Client Groups"
 				items = hq_server.getClientGroups()
+			
+			nukescripts.PythonPanel.__init__( self, title, "uk.co.thefoundry.FramePanel" )
+			self.setMinimumSize(180, 100)
 				
 			entries = []	
 			for item in items:
-				entry += nuke.Boolean_Knob(item, item)
-				self.addKnob( self.entry )
-				
+				self.addKnob( nuke.Boolean_Knob(item.get('hostname'), item.get('hostname')) )
+
+	def showModalDialog( self ):
+		result = nukescripts.PythonPanel.showModalDialog( self )
+		if result:
+			return True				
 				
 class HQrenderDialog( nukescripts.PythonPanel ):
 	def __init__(self, mode ):
@@ -81,12 +99,15 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/python/hqrender/hqrenderConfig.xml'))
 		readXMLtoState(hqrenderConfig, self._state)
 		
-		if self.hqmode == 'selected':
-			title = "HQrender Selected"
-			self.input_node = nuke.selectedNode()
-		else:
-			title = "HQrender All"
+		if mode == 'all':
+			title = 'HQrender All'
 			self.input_node = None
+		else:	
+			title = 'HQrender Selected'
+			self.input_node = nuke.selectedNode()
+		
+		nukescripts.PythonPanel.__init__( self, title, "uk.co.thefoundry.FramePanel" )
+		self.setMinimumSize(800, 260)
 		
 		try:
 			stored_cfg = nuke.knob('root.hqcfg')
@@ -106,9 +127,6 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				frange = a.frameRange()
 				self._state.saveValue('%s_range' % a['name'].value(), {'f1':frange.first(),'f2':frange.last(),'f3':frange.increment()})
 				self.viewers += [a['name'].value()]	
-				
-		nukescripts.PythonPanel.__init__( self, title, "uk.co.thefoundry.FramePanel" )
-		self.setMinimumSize(800, 260)
 
 		self.rangeinput	= nuke.Enumeration_Knob( "rangeinput", "Frame range", ['input', 'custom', 'global'] + self.viewers)
 		self.rangeinput.clearFlag(nuke.STARTLINE)
@@ -209,7 +227,9 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		elif knob == self.rangeinput:
 			self.updateFrameRange()	
 		elif knob in [self.f1, self.f2, self.f3]:
-			self.storeFrames()									
+			self.storeFrames()
+		elif knob == self.selclients:
+			self.clients.setValue(getClientsFromServer())										
 
 		self._state.save(knob) 
 
@@ -224,11 +244,11 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			self.f2.setValue(frange.last())
 			self.f3.setValue(frange.increment())
 		elif self.rangeinput.value() == 'input':
-			if self.input_node:
-				frange = self.input_node.frameRange()
+			if self.input_node:	
+				frange = self.input_node.root().frameRange()
 				self.f1.setValue(frange.first())
 				self.f2.setValue(frange.last())
-				self.f3.setValue(frange.increment())	
+				self.f3.setValue(frange.increment())
 		else:
 			frame_range = self._state.getValue('%s_range' % self.rangeinput.value())
 			if frame_range:
@@ -269,7 +289,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		if result:
 			nuke.knob('root.hqcfg', pickle.dumps(self._state._state)) # store knobs inside script
 			self.generateHQJob()
-			
+
 	def generateHQJob( self ):
 		import xmlrpclib
 		server_addr = "http://%s" % self.server.value()
@@ -278,7 +298,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			hq_server.ping()
 		except:
 			raise BaseException("Unable to coonect HQueue server: %s" % server_addr)
-		else:
+		else:			
 			f1 = self.f1.value()
 			f2 = self.f2.value()
 			f3 = self.f3.value()
@@ -287,7 +307,6 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			
 			out_nodes = ""
 			if self.hqmode == 'selected':
-				#out_nodes = str([n.name() for n in nuke.selectedNodes()])
 				for n in nuke.selectedNodes():
 					out_nodes += "%s;" % n.name()
 			
@@ -313,7 +332,8 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				job['environment'] = {
 					"HQ_NK_NODES"	: out_nodes,
 					"HQ_NK_MODE"	: self.hqmode,
-					"HQ_NK_PATHS"	: pickle.dumps(self._state.getValue('cross_path',[]))
+					"HQ_NK_PATHS"	: pickle.dumps(self._state.getValue('cross_path',[])),
+					"HQ_NK_OS"		: OS_ENV
 				}
 				job['triesLeft'] = self._state.getValue('triesLeft',2)
 				job_frames += [job]
