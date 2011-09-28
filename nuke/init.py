@@ -5,6 +5,8 @@ home = os.environ.get('HOME')
 sys.path.append(home + '/.nuke/python/')
 sys.path.append(pymodules_path)
 
+from hqrender import *
+
 #nuke.pluginAddPath(searchPath)
 #if nuke.env["LINUX"]:
 #    pluginFile = "libNT_Guides"
