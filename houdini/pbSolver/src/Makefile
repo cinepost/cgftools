@@ -23,8 +23,8 @@ INCDIRS = \
 #    -L/opt/studio/third_party/sdk/lib
 
 # Additional libraries.
-#LIBS = \
-#    -lstudioSDK \
+LIBS = \
+	-llog4cpp 
 #    -lthird_partySDK
 
 # Set the plugin library name.

@@ -4,6 +4,9 @@
 #include <iostream.h>
 #include <string.h>
 #include <strstream.h>
+#include <log4cpp/Category.hh>
+#include <log4cpp/FileAppender.hh>
+#include <log4cpp/SimpleLayout.hh>
 #include <UT/UT_String.h>
 #include <UT/UT_HashTable.h>
 #include <UT/UT_Hash.h>
@@ -39,9 +42,11 @@ protected:
 	// This implements our own solver step
 	SIM_Solver::SIM_Result 	solveObjectsSubclass (
 		SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects,
-		SIM_ObjectArray &feedbacktoobjects,
-		const SIM_Time &timestep
+		SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep
 	);
+	
+	bool					setupNewSimObject(SIM_Object* object);
+	bool					updateSimObject(SIM_Object* object);		
 		
 private:
 	static const SIM_DopDescription* getSolverDopDescription();
