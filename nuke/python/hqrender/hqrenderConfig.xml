@@ -8,14 +8,19 @@
 		<confItem name="f3" type="int" value="1" />
 	</confItem>
 
-	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKE_VERSION_STRING.$HQCLIENTARCH/$NUKE_VERSION_STRING" />
+	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKEVERSION.$HQCLIENTARCH/$NUKEEXEC" />
 	
 	<confItem name="cross_path">
 		<confItem name="projects">
-			<confItem name="mac" type="string" value="/Volumes/Projects/" />
+			<confItem name="osx" type="string" value="/Volumes/Projects/" />
 			<confItem name="lin" type="string" value="/mnt/Projects/" />
 			<confItem name="win" type="string" value="x:\projects\" />
 		</confItem>
 	</confItem>
 
+	<confItem name="cross_project">
+		<confItem name="osx" type="string" value="/Volumes/Projects/hqshared/temp/nuke" />
+		<confItem name="lin" type="string" value="/mnt/Projects/hqshared/temp/nuke" />
+		<confItem name="win" type="string" value="X:/Projects/hqshared/temp/nuke" />
+	</confItem>
 </hqrenderConf>

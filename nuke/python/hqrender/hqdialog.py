@@ -5,11 +5,11 @@ import cPickle as pickle
 OS_ENV = ""		
 		
 if nuke.env["LINUX"]:
-	OS_ENV = "LINUX"
+	OS_ENV = "lin"
 elif nuke.env["WIN32"]:
-	OS_ENV = "WIN32"
+	OS_ENV = "win"
 else:
-	OS_ENV = "OSX"			
+	OS_ENV = "osx"			
 		
 class DialogState:
 	def __init__(self):
@@ -157,7 +157,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.priority 	= nuke.Enumeration_Knob( "priority", "Priority", ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
 		self.mode 		= nuke.Enumeration_Knob( "mode", "", ["Render Current Script File", "Render Target Script File", "Copy Script to Shared Folder and Render"])
 		self.tscript	= nuke.File_Knob( "file", "Target Script" )
-		self.project 	= nuke.String_Knob('project', 'Project Path', "$HQROOT/projects")
+		self.project 	= nuke.String_Knob('project', 'Project Path')
 		self.savescript	= nuke.Boolean_Knob('savescript', 'Automatically Save Script File')
 		self.savescript.setFlag(nuke.STARTLINE)
 
@@ -222,9 +222,9 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			self._state.saveValue('custom_range', {'f1':0,'f2':24,'f3':1})
 		self.server.setValue(self._state.get(self.server, "node001:5000"))
 		self.priority.setValue(self._state.get(self.priority, 5))
-		self.nukexec.setValue(self._state.get(self.nukexec, "$HQROOT/dist/Nuke6.2v1.$HQCLIENTARCH/Nuke6.2"))
+		self.nukexec.setValue(self._state.get(self.nukexec, "Nuke"))
 		self.mode.setValue(self._state.get(self.mode, 0))
-		self.project.setValue(self._state.get(self.project, ""))
+		self.project.setValue(self._state._state.get('cross_project',{}).get(OS_ENV, ''))
 		self.savescript.setValue(self._state.get(self.savescript, True))
 		self.fperjob.setValue(self._state.get(self.fperjob, 1))	
         
@@ -344,6 +344,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				curScript = os.path.join(project_path, curScript.split("/")[-1])
 				nuke.scriptSaveAs(curScript)	
 			
+			from string import Template
 			nuke_executable = Template(self.nukexec.value())
 				
 			job_frames = []
@@ -351,12 +352,12 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				job = {}
 				job['name'] = 'Rendering %s script in range %d-%dx%d' % (curScript, frame, frame + frames_per_job - 1, f3)
 				job['shell'] ='bash'
-				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.substitute(NUKE_VERSION_STRING=nuke.NUKE_VERSION_STRING), frame, frame + frames_per_job - 1, f3, curScript)  
+				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.safe_substitute(NUKEVERSION=nuke.NUKE_VERSION_STRING, NUKEEXEC=os.environ.get('_','Nuke').split('/')[-1]), frame, frame + frames_per_job - 1, f3, curScript)  
 				job['environment'] = {
 					"HQ_NK_NODES"	: out_nodes,
 					"HQ_NK_MODE"	: self.hqmode,
-					"HQ_NK_PATHS"	: pickle.dumps(self._state.getValue('cross_path',[])),
-					"HQ_NK_OS"		: OS_ENV
+					"HQ_NK_PATHS"	: pickle.dumps(self._state.getValue('cross_path',None)),
+					"HQ_NK_SRC_OS"	: OS_ENV
 				}
 				job['triesLeft'] = self._state.getValue('triesLeft',2)
 				job_frames += [job]

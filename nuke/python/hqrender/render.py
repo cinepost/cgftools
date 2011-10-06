@@ -1,16 +1,14 @@
 import nuke, os, sys
 import getopt 
 import cPickle as pickle
-OSX = False
-WIN = False
-LIN = False
-
+OS_ENV = ""		
+		
 if nuke.env["LINUX"]:
-	LIN = True
+	OS_ENV = "lin"
 elif nuke.env["WIN32"]:
-	WIN = True
+	OS_ENV = "win"
 else:
-	OSX = True	
+	OS_ENV = "osx"
 
 def RecursiveFindNodes(nodeClasses, startNode):
     if startNode.Class() in nodeClasses:
@@ -60,9 +58,19 @@ if mode == 'selected':
 
 sys.stdout.write('Rendering %s nodes: %s \n' % (mode, [node.name() for node in out_nodes]))
 	
-
-allReadWriteNodes = [w for w in RecursiveFindNodes(['Write','Read'], nuke.root())]
-##fixOSPaths( allReadWriteNodes, inPattern, outPattern )
+source_os = os.environ.get('HQ_NK_SRC_OS')	
+cross_paths = os.environ.get('HQ_NK_PATHS')
+if cross_paths and source_os:
+	allReadWriteNodes = [w for w in RecursiveFindNodes(['Write','Read'], nuke.root())]
+	try:
+		cross_paths = pickle.loads(cross_paths)
+	except:
+		sys.stderr.write('Unable to load pickled cross paths %s !' % cross_paths)
+	else:
+		for key in cross_paths.keys():
+			sys.stdout.write('Replacing file paths form %s to %s \n' % (source_os, OS_ENV))
+			triple = cross_paths[key]	
+			fixOSPaths( allReadWriteNodes, triple[source_os], triple[OS_ENV] )
 
 # Render needed nodes
 if out_nodes:
