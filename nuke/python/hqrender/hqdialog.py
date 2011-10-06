@@ -304,6 +304,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 
 	def generateHQJob( self ):
 		import xmlrpclib
+		import getpass
 		server_addr = "http://%s" % self.server.value()
 		hq_server = xmlrpclib.ServerProxy( server_addr )
 		try:
@@ -352,7 +353,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				job = {}
 				job['name'] = 'Rendering %s script in range %d-%dx%d' % (curScript, frame, frame + frames_per_job - 1, f3)
 				job['shell'] ='bash'
-				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.safe_substitute(NUKEVERSION=nuke.NUKE_VERSION_STRING, NUKEEXEC=os.environ.get('_','Nuke').split('/')[-1]), frame, frame + frames_per_job - 1, f3, curScript)  
+				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.safe_substitute(NUKEVERSION=nuke.NUKE_VERSION_STRING), frame, frame + frames_per_job - 1, f3, curScript)  
 				job['environment'] = {
 					"HQ_NK_NODES"	: out_nodes,
 					"HQ_NK_MODE"	: self.hqmode,
@@ -363,7 +364,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 				job_frames += [job]
 			
 			job_spec = {
-				'name'	:	'Nuke script %s by %s' % (curScript, os.environ.get('USERNAME')),
+				'name'	:	'Nuke script %s by %s' % (curScript, getpass.getuser()),
 				'priority': self.priority.value(),
 				'conditions' : [],
 				'children': job_frames

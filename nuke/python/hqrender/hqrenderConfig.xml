@@ -8,7 +8,7 @@
 		<confItem name="f3" type="int" value="1" />
 	</confItem>
 
-	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKEVERSION.$HQCLIENTARCH/$NUKEEXEC" />
+	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKEVERSION.$HQCLIENTARCH/Nuke" />
 	
 	<confItem name="cross_path">
 		<confItem name="projects">

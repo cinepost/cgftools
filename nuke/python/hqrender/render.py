@@ -37,6 +37,20 @@ for opt, arg in options:
 
 inScript = sys.argv[-1]
 
+source_os = os.environ.get('HQ_NK_SRC_OS')	
+cross_paths = os.environ.get('HQ_NK_PATHS')
+if cross_paths and source_os:
+	try:
+		cross_paths = pickle.loads(cross_paths)
+	except:
+		sys.stderr.write('Unable to load pickled cross paths %s !' % cross_paths)
+		exit(1)
+	else:
+		for key in cross_paths.keys():
+			sys.stdout.write('Replacing script path form %s to %s \n' % (source_os, OS_ENV))
+			triple = cross_paths[key]	
+			inScript = inScript.replace( triple[source_os], triple[OS_ENV] )
+				
 # Open .nk script
 nuke.scriptOpen( inScript )
 sys.stdout.write('Using script: %s \n' % inScript)
@@ -58,19 +72,12 @@ if mode == 'selected':
 
 sys.stdout.write('Rendering %s nodes: %s \n' % (mode, [node.name() for node in out_nodes]))
 	
-source_os = os.environ.get('HQ_NK_SRC_OS')	
-cross_paths = os.environ.get('HQ_NK_PATHS')
 if cross_paths and source_os:
 	allReadWriteNodes = [w for w in RecursiveFindNodes(['Write','Read'], nuke.root())]
-	try:
-		cross_paths = pickle.loads(cross_paths)
-	except:
-		sys.stderr.write('Unable to load pickled cross paths %s !' % cross_paths)
-	else:
-		for key in cross_paths.keys():
-			sys.stdout.write('Replacing file paths form %s to %s \n' % (source_os, OS_ENV))
-			triple = cross_paths[key]	
-			fixOSPaths( allReadWriteNodes, triple[source_os], triple[OS_ENV] )
+	for key in cross_paths.keys():
+		sys.stdout.write('Replacing file paths form %s to %s \n' % (source_os, OS_ENV))
+		triple = cross_paths[key]	
+		fixOSPaths( allReadWriteNodes, triple[source_os], triple[OS_ENV] )
 
 # Render needed nodes
 if out_nodes:
