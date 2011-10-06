@@ -60,7 +60,7 @@ def readXMLtoState( xml, state ):
 			state.saveValue(child.getAttribute('name'), readXMLElement(child))						
 		
 class HQClientGroupsDialog ( nukescripts.PythonPanel ):
-	def __init__(self, mode='clients', server='localhost:5000', backstring=None, initlist = []):
+	def __init__(self, mode='clients', server='node001:5000', backstring=None, initlist = []):
 		import xmlrpclib
 		self.backstring = backstring
 		server_addr = "http://%s" % server
@@ -102,7 +102,12 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 	def __init__(self, mode ):
 		self._state = _hqRenderDialogState
 		self.hqmode = mode
-		hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/python/hqrender/hqrenderConfig.xml'))
+		hqrenderConfig = None
+		try:
+			hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/hqrenderConfig.xml'))
+		except:
+			hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/python/hqrender/hqrenderConfig.xml'))
+		
 		readXMLtoState(hqrenderConfig, self._state)
 	
 		if mode == 'selected':
@@ -113,7 +118,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			self.input_node = None
 	
 		nukescripts.PythonPanel.__init__( self,title, "uk.co.thefoundry.FramePanel" )
-		self.setMinimumSize(800, 260)
+		self.setMinimumSize(800, 260)	
 		
 		try:
 			stored_cfg = nuke.knob('root.hqcfg')
@@ -150,7 +155,6 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.server 	= nuke.String_Knob('server', 'HQueue Server')
 		self.frame 		= nuke.Int_Knob( "frame", "Frame:" )
 		self.priority 	= nuke.Enumeration_Knob( "priority", "Priority", ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
-		self.nukexec	= nuke.String_Knob('nukexec', 'Nuke Executable')
 		self.mode 		= nuke.Enumeration_Knob( "mode", "", ["Render Current Script File", "Render Target Script File", "Copy Script to Shared Folder and Render"])
 		self.tscript	= nuke.File_Knob( "file", "Target Script" )
 		self.project 	= nuke.String_Knob('project', 'Project Path', "$HQROOT/projects")
@@ -162,10 +166,10 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.addKnob( self.f1 )
 		self.addKnob( self.f2 )
 		self.addKnob( self.f3 )
-		
+		self.addKnob( nuke.Text_Knob(""))
 		self.addKnob( self.server )
 		self.addKnob( self.priority )
-		self.addKnob( self.nukexec )
+		self.addKnob( nuke.Text_Knob(""))
 		self.addKnob( self.mode )
 		self.addKnob( self.tscript )
 		self.addKnob( self.project )
@@ -175,6 +179,7 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.tabAdvanc	= nuke.Tab_Knob( 'Advanced' )
 		self.addKnob( self.tabAdvanc )
 
+		self.nukexec	= nuke.String_Knob('nukexec', 'Nuke Executable')
 		self.assignto 	= nuke.Enumeration_Knob( "assignto", "Assign To", ["Any Client", "Listed Clients", "Clients from Listed Groups"])
 		self.clients	= nuke.String_Knob('clients', 'Clients')
 		self.selclients = nuke.PyScript_Knob("selclients", "Select Clients","getClientsFromServer()")
@@ -186,11 +191,14 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.allinone.setFlag(nuke.STARTLINE)
 		self.fperjob	= nuke.Int_Knob('fperjob', 'Frames Per Job')		
 		
+		self.addKnob( self.nukexec )
+		self.addKnob( nuke.Text_Knob(""))
 		self.addKnob( self.assignto )
 		self.addKnob( self.clients )
 		self.addKnob( self.selclients )
 		self.addKnob( self.groups )
 		self.addKnob( self.selgroups )
+		self.addKnob( nuke.Text_Knob(""))
 		self.addKnob( self.allinone )
 		self.addKnob( self.fperjob )
 		
@@ -212,13 +220,13 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 		self.rangeinput.setValue(self._state.get(self.rangeinput, 0))
 		if not self._state.getValue('custom_range'):	
 			self._state.saveValue('custom_range', {'f1':0,'f2':24,'f3':1})
-		self.server.setValue(self._state.get(self.server, "localhost:5000"))
+		self.server.setValue(self._state.get(self.server, "node001:5000"))
 		self.priority.setValue(self._state.get(self.priority, 5))
-		self.nukexec.setValue(self._state.get(self.nukexec, "Nuke6.2"))
+		self.nukexec.setValue(self._state.get(self.nukexec, "$HQROOT/dist/Nuke6.2v1.$HQCLIENTARCH/Nuke6.2"))
 		self.mode.setValue(self._state.get(self.mode, 0))
-		self.project.setValue(self._state.get(self.project, "$HQROOT/projects"))
+		self.project.setValue(self._state.get(self.project, ""))
 		self.savescript.setValue(self._state.get(self.savescript, True))
-		self.fperjob.setValue(self._state.get(self.fperjob, 1))
+		self.fperjob.setValue(self._state.get(self.fperjob, 1))	
         
         # Update UI
 		self.updateScriptMode()
@@ -307,7 +315,6 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 			f2 = self.f2.value()
 			f3 = self.f3.value()
 			frames_per_job = self.fperjob.value()
-			nuke_exec = self.nukexec.value()
 			
 			out_nodes = ""
 			if self.hqmode == 'selected':
@@ -315,24 +322,36 @@ class HQrenderDialog( nukescripts.PythonPanel ):
 					out_nodes += "%s;" % n.name()
 			
 			curScript = nuke.toNode("root").name()
+			if self.savescript.value(): 
+					nuke.scriptSaveAs(curScript)
+					
 			if self.mode.value() == "Render Current Script File":
-				if self.savescript.value():
-					if curScript in ["", "Root"]:
-						# TODO: save untitled script into HQ shared folder. May be hidden...
-						import uuid
-						uid = uuid.uuid1()
-						curScript = "/tmp/_nuke_tempScript_%s.nk" % uid
+				if curScript in ["", "Root"]:
+					# TODO: save untitled script into HQ shared folder. May be hidden...
+					import uuid
+					uid = uuid.uuid1()
+					curScript = "/tmp/_nuke_tempScript_%s.nk" % uid		
+					nuke.scriptSaveAs(curScript)
 						
-					nuke.scriptSaveAs(curScript)	
 			elif self.mode.value() == "Render Target Script File":
 				curScript = self.tscript.value()
+			
+			else:
+				project_path = self.project.value()
+				if not os.path.exists(project_path):
+					os.makedirs(project_path)
+
+				curScript = os.path.join(project_path, curScript.split("/")[-1])
+				nuke.scriptSaveAs(curScript)	
+			
+			nuke_executable = Template(self.nukexec.value())
 				
 			job_frames = []
 			for frame in range(f1, f2, frames_per_job):
 				job = {}
 				job['name'] = 'Rendering %s script in range %d-%dx%d' % (curScript, frame, frame + frames_per_job - 1, f3)
 				job['shell'] ='bash'
-				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_exec, frame, frame + frames_per_job - 1, f3, curScript)  
+				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.substitute(NUKE_VERSION_STRING=nuke.NUKE_VERSION_STRING), frame, frame + frames_per_job - 1, f3, curScript)  
 				job['environment'] = {
 					"HQ_NK_NODES"	: out_nodes,
 					"HQ_NK_MODE"	: self.hqmode,

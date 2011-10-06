@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <hqrenderConf>
-	<confItem name="server" type="string" value="ws09:5000" />
+	<confItem name="server" type="string" value="node001:5000" />
 
 	<confItem name="custom_range">
 		<confItem name="f1" type="int" value="0" />
@@ -8,26 +8,13 @@
 		<confItem name="f3" type="int" value="1" />
 	</confItem>
 
-	<confItem name="nukexec" type="string" value="Nuke6.2" />
-
-	<confItem name="cross_exec">
-		<confItem name="Nuke6.2">
-			<confItem name="mac" type="string" value="Nuke6.2" />
-			<confItem name="lin" type="string" value="nuke6.2" />
-			<confItem name="win" type="string" value="nuke6.2.exe" />
-		</confItem>
-		<confItem name="Nuke6.3">
-			<confItem name="mac" type="string" value="Nuke6.3" />
-			<confItem name="lin" type="string" value="nuke6.3" />
-			<confItem name="win" type="string" value="nuke6.3.exe" />
-		</confItem>
-	</confItem>
+	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKE_VERSION_STRING.$HQCLIENTARCH/$NUKE_VERSION_STRING" />
 	
 	<confItem name="cross_path">
-		<confItem name="server">
-			<confItem name="mac" type="string" value="/hqshared/" />
-			<confItem name="lin" type="string" value="/hqshared/" />
-			<confItem name="win" type="string" value="x:\projects\hqshared" />
+		<confItem name="projects">
+			<confItem name="mac" type="string" value="/Volumes/Projects/" />
+			<confItem name="lin" type="string" value="/mnt/Projects/" />
+			<confItem name="win" type="string" value="x:\projects\" />
 		</confItem>
 	</confItem>
 

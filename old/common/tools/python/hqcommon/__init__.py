@@ -1,1 +1,0 @@
-from hqdialog import *

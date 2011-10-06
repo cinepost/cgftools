@@ -27,9 +27,6 @@
 #include <SIM/SIM_Relationship.h>
 #include <SIM/SIM_RelationshipGroup.h>
 
-#define SIM_NAME_BIRTHRATE      "birthrate"
-#define SIM_NAME_ORIGINALDEPTH  "originaldepth"
-
 class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
 {
 public:
@@ -40,10 +37,7 @@ protected:
     virtual					~SIM_pbSolver();
     
 	// This implements our own solver step
-	SIM_Solver::SIM_Result 	solveObjectsSubclass (
-		SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects,
-		SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep
-	);
+	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
 	
 	bool					setupNewSimObject(SIM_Object* object);
 	bool					updateSimObject(SIM_Object* object);		
@@ -52,7 +46,7 @@ private:
 	static const SIM_DopDescription* getSolverDopDescription();
 	
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_pbSolver, SIM_Solver, "CGFX PhysBAM Solver", getSolverDopDescription());
+	DECLARE_DATAFACTORY(SIM_pbSolver, SIM_Solver, "PhysBAM Deformable Solver", getSolverDopDescription());
 };
 
 #endif

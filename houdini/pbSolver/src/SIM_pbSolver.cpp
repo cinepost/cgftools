@@ -58,16 +58,16 @@
 using namespace data_exchange;
 
 static PRM_Name		theSimeFileName("simfilename", "Simulation file");
-static PRM_Default	theSimeFileNameDefault(0, "$HIP/sim/simfile.$SF4.pbs");
+static PRM_Default	theSimeFileNameDefault(0, "$HIH/projects/simfile.$SF4.pbs");
 
 void
 initializeSIM(void *){
     IMPLEMENT_DATAFACTORY(SIM_pbSolver);
+	std::cout << "initializeSIM called." << std::endl;
 }
 	
 SIM_pbSolver::SIM_pbSolver(const SIM_DataFactory *factory) : BaseClass(factory), SIM_OptionsUser(this){
 	
-	std::cout << "!!UID!!: " << getCreatorNode() << std::endl;
 }
 
 SIM_pbSolver::~SIM_pbSolver(){
@@ -80,16 +80,16 @@ const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
         PRM_Template()
     };
 
-    static SIM_DopDescription    theDopDescription(true, "cgfx_physbamsolver", "CGFX PhysBAM Solver", SIM_SOLVER_DATANAME, classname(), theTemplates);
+    static SIM_DopDescription    theDopDescription(true, "pbm_def_solver", "PhysBAM Deformable Solver", SIM_SOLVER_DATANAME, classname(), theTemplates);
     return &theDopDescription;
 }	
 
 bool SIM_pbSolver::setupNewSimObject(SIM_Object* object){
-	std::cout << "\t" << object->getName() << std::endl;
+	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
 	return true;
 }
 bool SIM_pbSolver::updateSimObject(SIM_Object* object){
-	std::cout << "\t" << object->getName() << std::endl;
+	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
 	
 	// Get the object's last state before this time step
 	const SIM_Geometry* const geometry(object->getGeometry());
@@ -110,7 +110,20 @@ bool SIM_pbSolver::updateSimObject(SIM_Object* object){
 		)
 	);	
 	
+	GU_DetailHandleAutoWriteLock         gdl(geometry_copy->lockGeometry());
+	GU_Detail           &gdp = *gdl.getGdp();
+	GEO_Point           *geopt;
+	UT_Vector3			dp(1,0,0);
+	
+	// Integrate our velocities.
+	gdp.translate( dp, 0, 0, 1, 0, 0); 	
+	//FOR_ALL_GPOINTS((&gdp), geopt)
+	//{
+	//	geopt->getPos() = geopt->getPos() + dp;
+	//}
+	
 	// Store the integrated simulation state in geometry_copy
+	geometry_copy->releaseGeometry();
 	
 	return true;
 }
@@ -130,45 +143,17 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	const fpreal t_end = engine.getSimulationTime();
 	const fpreal currTime = engine.getSimulationTime();
 	
-	std::cout << "UID: " << getCreatorNode()->getUniqueId() << std::endl;
-	
 	// Evaluate all of the solver node parameters at this particular time
 	thisSolverNode = getCreatorNode();
 	thisSolverNode->evalString(simfilename, theSimeFileName.getToken(), 0, currTime );
 	std::cout << "Preparing data for simulation time: " << currTime << std::endl; 
-	
-	// Create deformable bodies simulation
-	deformable_body_simulation dbs;
-	
-	// To add a deformable body, allocate a deformable_body, populate it, and
-    // add it to the simulation_objects array.  deformable_body_simulation will
-    // free up the memory, so make sure you allocate the deformable_body with
-    // new.  Polygons are specified in counterclockwise order.  This deformable
-    // body has eight vertices and six faces.  It is a cube with square faces.
-    deformable_body* db = new deformable_body;
-    db->position.push_back(vf3(0,0,0));
-    db->position.push_back(vf3(0,0,1));
-    db->position.push_back(vf3(0,1,0));
-    db->position.push_back(vf3(0,1,1));
-    db->position.push_back(vf3(1,0,0));
-    db->position.push_back(vf3(1,0,1));
-    db->position.push_back(vf3(1,1,0));
-    db->position.push_back(vf3(1,1,1));
-    db->mesh.insert_polygon(vi4(7,6,2,3));
-    db->mesh.insert_polygon(vi4(2,6,4,0));
-    db->mesh.insert_polygon(vi4(1,0,4,5));
-    db->mesh.insert_polygon(vi4(0,1,3,2));
-    db->mesh.insert_polygon(vi4(3,1,5,7));
-    db->mesh.insert_polygon(vi4(4,6,7,5));
-    dbs.simulation_objects.push_back(db);
 	
 	// Loop through new objects.
 	if (newobjects.entries() > 0) {
 		std::cout << "Setting up new objects in sim:" << std::endl; 
 		for( i = 0; i < newobjects.entries(); i++ ){	
 			new_object = newobjects(i);
-	        //setCurrentObject(i, filtered.entries(), filtered(i));			
-			setupNewSimObject(new_object);
+	    	setupNewSimObject(new_object);
 		}	
 	}
 
@@ -177,21 +162,16 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		std::cout << "Processing objects in sim:" << std::endl; 
 		for( i = 0; i < objects.entries(); i++ ){ 
 			object = objects(i);
-	        //setCurrentObject(i, filtered.entries(), filtered(i));			
-			updateSimObject(object);  
+	    	updateSimObject(object);  
 		}	
 	}
 	
+	// Run the simulation for the given time_step
+	
+	// Update all the objects
+	
 	//if( something went wrong )
 	//   return SIM_Solver::SIM_SOLVER_FAIL;
-	
-	// Write out the simulation object
-	std::cout << "Writing sim file: " << simfilename << std::endl; 
-    {
-        std::ofstream ofs(simfilename);
-        boost::archive::binary_oarchive oa(ofs);
-        oa << dbs;
-    }
-	
+		
 	return SIM_Solver::SIM_SOLVER_SUCCESS;
 }		
