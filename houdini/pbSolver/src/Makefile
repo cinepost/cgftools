@@ -1,5 +1,6 @@
 # Installation directory.
 INSTDIR = $(HOME)/houdini11.1
+DEVDIR	= $(HOME)/dev/cgftools
 
 # List of C++ source files to build.
 # SOP_Main.C registers the operators and handles the DSO-specifics.
@@ -8,7 +9,7 @@ SOURCES = \
 
 # Icons for custom node operators.
 ICONS = \
-    svg/DOP_cgfx_physbamsolver.svg
+    svg/DOP_pbm_def_solver.svg
 
 # Use the highest optimization level.
 OPTIMIZER = -O3
@@ -16,22 +17,16 @@ OPTIMIZER = -O3
 # Additional include directories.
 INCDIRS = \
     -I/usr/include \
-    -I../interface
+    -I$(DEVDIR)/houdini/physLib/src
 
 # Additional library directories.
 LIBDIRS = \
-	-L/home/max/dev/cgftools/houdini/pbSolver/libs/boost
-#    -L/opt/studio/sdk/lib \
-#    -L/opt/studio/third_party/sdk/lib
+	-L$(DEVDIR)/houdini/pbSolver/libs/boost
 
 # Additional libraries.
 LIBS = \
 	-llog4cpp \
-	-lboost_serialization-gcc44-mt-1_37
-#	/home/max/dev/cgftools/houdini/pbSolver/libs/boost/libboost_serialization-gcc44-mt-1_37.so.1.37.0
-#	/home/max/dev/cgftools/houdini/pbSolver/libs/boost/libboost_serialization.a
-#	-static -llibboost_serialization
-#    -lthird_partySDK
+	#-lboost_serialization-gcc44-mt-1_37
 
 # Set the plugin library name.
 DSONAME = $(INSTDIR)/dso/SIM_pbSolver.so

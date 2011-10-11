@@ -1,6 +1,7 @@
-import os, sys, nuke, nukescripts
+import os, sys, nuke
+from nukescripts.panels import PythonPanel 
 from xml.dom import minidom, Node		
-import cPickle as pickle
+import cPickle as pickle	
 	
 OS_ENV = ""		
 		
@@ -59,7 +60,7 @@ def readXMLtoState( xml, state ):
 		else:	
 			state.saveValue(child.getAttribute('name'), readXMLElement(child))						
 		
-class HQClientGroupsDialog ( nukescripts.PythonPanel ):
+class HQClientGroupsDialog ( PythonPanel ):
 	def __init__(self, mode='clients', server='node001:5000', backstring=None, initlist = []):
 		import xmlrpclib
 		self.backstring = backstring
@@ -98,7 +99,7 @@ class HQClientGroupsDialog ( nukescripts.PythonPanel ):
 					result_items += "%s;" % entry.name()
 			self.backstring.setValue(result_items[:-1])		
 				
-class HQrenderDialog( nukescripts.PythonPanel ):
+class HQrenderDialog( PythonPanel ):
 	def __init__(self, mode ):
 		self._state = _hqRenderDialogState
 		self.hqmode = mode
