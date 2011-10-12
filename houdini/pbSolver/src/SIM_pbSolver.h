@@ -1,7 +1,8 @@
 #ifndef __SIM_pbSolver_h__
 #define __SIM_pbSolver_h__
 
-#include "libmain.h"
+#include "wrapper_header.h"
+#include "HPI_trimesh.h"
 
 #include <fstream>
 #include <vector>
@@ -74,8 +75,9 @@ void (*hpi_get_vf3_array)(const physbam_base * obj, int id, data_exchange::vf3 *
 class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
 {
 private:
-	static std::map<int, physbam_simulation*>	simulations;			// global store for all of the simulation instances
-	std::map<int, physbam_object*>				objects;				// local simulation objects storage
+	static	std::map<int, physbam_simulation*>	simulations;			// global store for all of the simulation instances
+	static	std::map<int, physbam_object*>		objects;				// global simulation objects storage
+	static	std::map<int, HPI_TriMesh>			meshes;					// global simulation meshes storage
 	
 public:
 	GETSET_DATA_FUNCS_F("yourownaccuracy", MyOwnAccuracy);

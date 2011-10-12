@@ -1,6 +1,7 @@
 # Installation directory.
 INSTDIR = $(HOME)/houdini11.1
 DEVDIR	= $(HOME)/dev/cgftools
+PHYSBAM = /home/levelset/PhysBAM-2011
 
 # List of C++ source files to build.
 # SOP_Main.C registers the operators and handles the DSO-specifics.
@@ -17,7 +18,7 @@ OPTIMIZER = -O3
 # Additional include directories.
 INCDIRS = \
     -I/usr/include \
-    -I$(DEVDIR)/houdini/physLib/src
+    -I$(PHYSBAM)/Projects/deformable_interface
 
 # Additional library directories.
 LIBDIRS = \
