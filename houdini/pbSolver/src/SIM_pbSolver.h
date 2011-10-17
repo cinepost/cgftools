@@ -13,10 +13,6 @@
 #include <strstream.h>
 #include <dlfcn.h>
 
-#include <boost/serialization/vector.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 #include <CH/CH_LocalVariable.h>
 #include <GEO/GEO_AttributeHandle.h>
 #include <GU/GU_Detail.h>
@@ -58,6 +54,8 @@
 #include <UT/UT_Vector3.h>
 #include <UT/UT_WorkBuffer.h>
 #include <UT/UT_Interrupt.h>
+
+#include "HPI_trimesh.h"
 
 physbam_simulation* (*hpi_create_simulation)();
 bool (*hpi_destroy_simulation)(physbam_simulation*);

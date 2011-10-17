@@ -1,7 +1,7 @@
 # Installation directory.
 INSTDIR = $(HOME)/houdini11.1
 DEVDIR	= $(HOME)/dev/cgftools
-PHYSBAM = /home/levelset/PhysBAM-2011
+PHYSBAM = /opt/PhysBAM-2011
 
 # List of C++ source files to build.
 # SOP_Main.C registers the operators and handles the DSO-specifics.

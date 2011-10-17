@@ -146,7 +146,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 					
 					
 					std::cout << "indexes3:" << i1 << " " << i2 << " " << i3 << std::endl;
-					db.mesh.insert_polygon(data_exchange::vi3(i1, i2, i3));
+					db.mesh.insert_polygon(data_exchange::vi3(i3, i2, i1));
 					break;
 				case 4:
 					v = &prim->getVertex(0);
@@ -199,7 +199,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 					
 					std::cout << "indexes4:" << i1 << " " << i2 << " " << i3 << " " << i4 << std::endl;
 					
-					db.mesh.insert_polygon(data_exchange::vi4(i1, i2, i3, i4));				
+					db.mesh.insert_polygon(data_exchange::vi4(i4, i3, i2, i1));				
 					break;
 				default:
 					std::cout << prim->getVertexCount();
@@ -208,22 +208,6 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 		}
 	}
 
-/*	
-	db.position.push_back(data_exchange::vf3(0,0,0));
-    db.position.push_back(data_exchange::vf3(0,0,1));
-    db.position.push_back(data_exchange::vf3(0,1,0));
-    db.position.push_back(data_exchange::vf3(0,1,1));
-    db.position.push_back(data_exchange::vf3(1,0,0));
-    db.position.push_back(data_exchange::vf3(1,0,1));
-    db.position.push_back(data_exchange::vf3(1,1,0));
-    db.position.push_back(data_exchange::vf3(1,1,1));
-    db.mesh.insert_polygon(data_exchange::vi4(7,6,2,3));
-    db.mesh.insert_polygon(data_exchange::vi4(2,6,4,0));
-    db.mesh.insert_polygon(data_exchange::vi4(1,0,4,5));
-    db.mesh.insert_polygon(data_exchange::vi4(0,1,3,2));
-    db.mesh.insert_polygon(data_exchange::vi4(3,1,5,7));
-    db.mesh.insert_polygon(data_exchange::vi4(4,6,7,5));
-*/	
 	physbam_object* pb_object = hpi_add_object(sim, &db);
 	if(pb_object){
 		meshes[object->getObjectId()] = trimesh;
@@ -284,16 +268,18 @@ SIM_Solver::SIM_Result
 SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
 	if(PB_LIB_READY){
 		SIM_ObjectArray		filtered;
-		SIM_Object			*object, *new_object;
 		UT_String			group, simfilename;
 		OP_Node				*thisSolverNode;
 		int					i;
+		
+		for(int s = 0; s < engine.getNumSimulationObjects(); s++){
+			std::cout << "engine: " << engine.getSimulationObject(s)->getName() << " of type: " << engine.getSimulationObject(s)->getDataType() << std::endl;
+		}
 		
 		const SIM_DataFilterByType hard_filter 	= SIM_DataFilterByType("SIM_ConRelHard");
 		const SIM_DataFilterByType pin_filter 	= SIM_DataFilterByType("SIM_ConAnchorObjPointPos");
 		const SIM_DataFilterByType goal_filter 	= SIM_DataFilterByType("SIM_ConAnchorWorldSpacePos");
 		
-		const fpreal t_end = engine.getSimulationTime();
 		const fpreal currTime = engine.getSimulationTime();
 		
 		physbam_simulation* sim = pbSim();
@@ -313,22 +299,20 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 			}	
 		}
 	
+		// Run the simulation for the given time_step
+		hpi_simulate_frame(sim);
+	
+		// Update all the objects
 		// Loop through all the objects.
 		if (objects.entries() > 0){
 			hpi_simulate_frame(sim);
 			std::cout << "Processing objects in sim:" << std::endl; 
 			for( i = 0; i < objects.entries(); i++ ){ 
-				object = objects(i);
-		    	updateSimObject(sim, object);  
+		    	if(!updateSimObject(sim, objects(i))){
+					return SIM_Solver::SIM_SOLVER_FAIL;
+				}  
 			}	
 		}
-		
-		// Run the simulation for the given time_step
-		
-		// Update all the objects
-		
-		//if( something went wrong )
-		//   return SIM_Solver::SIM_SOLVER_FAIL;
 			
 		return SIM_Solver::SIM_SOLVER_SUCCESS;
 	}else{
