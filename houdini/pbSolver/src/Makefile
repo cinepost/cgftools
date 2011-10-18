@@ -26,7 +26,7 @@ LIBDIRS = \
 
 # Additional libraries.
 LIBS = \
-	-llog4cpp \
+	-llog4cxx \
 	#-lboost_serialization-gcc44-mt-1_37
 
 # Set the plugin library name.

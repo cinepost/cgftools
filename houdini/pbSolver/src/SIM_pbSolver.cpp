@@ -35,6 +35,9 @@ initializeSIM(void *){
 		hpi_get_float 				= (float (*)(const physbam_base * obj, int id)) dlsym(handle, "get_float");
 		hpi_get_vf3_array			= (void (*)(const physbam_base * obj, int id, data_exchange::vf3 * x, int length, int start)) dlsym(handle, "get_vf3_array");
 		
+		hpi_enable_logging			= (void (*)(const char* file)) dlsym(handle, "enable_logging");
+		hpi_finish_logging			= (void (*)()) dlsym(handle, "finish_logging");
+		
 		data_exchange::register_ids();
 		PB_LIB_READY 				= true;
 		
@@ -95,7 +98,6 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 		db.position.push_back(data_exchange::vf3(0, 1, 2));
 	}
 	*/
-	int vertex_count = 0;
 	int	pb_vertex_index = 0;
 	HPI_TriMesh	trimesh;
 
@@ -216,7 +218,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 		std::cout << "pointer:" << pb_object << " stored for object: " << object->getObjectId() << std::endl;
 		return true;
 	}else{
-		printf("Unable to add new object %s into simulation !!!\n", object->getObjectId());
+		printf("Unable to add new object %d into simulation !!!\n", object->getObjectId());
 		return false;
 	}
 }
@@ -267,29 +269,46 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 SIM_Solver::SIM_Result
 SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
 	if(PB_LIB_READY){
-		SIM_ObjectArray		filtered;
-		UT_String			group, simfilename;
-		OP_Node				*thisSolverNode;
-		int					i;
+		OP_Node*				obj_parent;
+		const SIM_Object*		obj;
+		const SIM_Geometry*		sourcegeo;
+		SIM_ColliderInfoArray	colliderinfo;  
+		SIM_ObjectArray			filtered;
+		SIM_Time				sim_time;
+		UT_String				group, simfilename;
+		physbam_simulation* 	sim;
+		int						i;
+		const SIM_Time 			curr_time = engine.getSimulationTime();
 		
-		for(int s = 0; s < engine.getNumSimulationObjects(); s++){
-			std::cout << "engine: " << engine.getSimulationObject(s)->getName() << " of type: " << engine.getSimulationObject(s)->getDataType() << std::endl;
+		getStartTime(sim_time);
+		if( sim_time == curr_time) {
+			// This is a simulation start point, so we need to set-up simulation first
+			sim = pbSim(true);
+		}else{
+			// This is a simulation step, we need to get existing sim here
+			sim = pbSim(false);
 		}
 		
-		const SIM_DataFilterByType hard_filter 	= SIM_DataFilterByType("SIM_ConRelHard");
-		const SIM_DataFilterByType pin_filter 	= SIM_DataFilterByType("SIM_ConAnchorObjPointPos");
-		const SIM_DataFilterByType goal_filter 	= SIM_DataFilterByType("SIM_ConAnchorWorldSpacePos");
+		for(int s = 0; s < engine.getNumSimulationObjects(); s++){
+			obj = engine.getSimulationObject(s);
+			sourcegeo = obj->getGeometry();
+			
+			std::cout << "engine: " << obj->getName() << " num subd: " << obj->getNumSubData() << " static: " << obj->getIsStatic();
+			if(!sourcegeo || sourcegeo->getGeometry().isNull()){
+				std::cout << " no geo!" << std::endl;
+			}else{
+				std::cout << " geo exist: " << sourcegeo->getGeometry().readLock()->primitives().entries() << std::endl;
+			}
+			
+			for(int d = 0; d < obj->getNumSubData(); d++){
+				const char * data_name = obj->getSubDataName(d);
+				std::cout << "data name: " << data_name << std::endl;
+			}
+			//std::cout << "engine: " << engine.getSimulationObject(s)->getName() << " of subclass type: " << engine.getSimulationObject(s)->getDataTypeSubclass() << std::endl;
 		
-		const fpreal currTime = engine.getSimulationTime();
+		}
 		
-		physbam_simulation* sim = pbSim();
-		
-		// Evaluate all of the solver node parameters at this particular time
-		thisSolverNode = getCreatorNode();
-		thisSolverNode->evalString(simfilename, theSimeFileName.getToken(), 0, currTime );
-		std::cout << "Preparing data for simulation time: " << currTime << std::endl; 
-		
-		// Loop through new objects.
+		// Loop through new objects and add them into sim.
 		if (newobjects.entries() > 0) {
 			std::cout << "Setting up new objects in sim:" << std::endl; 
 			for( i = 0; i < newobjects.entries(); i++ ){	
@@ -300,13 +319,12 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		}
 	
 		// Run the simulation for the given time_step
-		hpi_simulate_frame(sim);
+		//hpi_simulate_frame(sim);
 	
 		// Update all the objects
 		// Loop through all the objects.
 		if (objects.entries() > 0){
-			hpi_simulate_frame(sim);
-			std::cout << "Processing objects in sim:" << std::endl; 
+			std::cout << "Updating objects in sim:" << std::endl; 
 			for( i = 0; i < objects.entries(); i++ ){ 
 		    	if(!updateSimObject(sim, objects(i))){
 					return SIM_Solver::SIM_SOLVER_FAIL;
@@ -322,14 +340,20 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 }
 
 
-physbam_simulation*		SIM_pbSolver::pbSim(void){
+physbam_simulation*		SIM_pbSolver::pbSim(bool reset){
 	int uid = getCreatorNode()->getUniqueId();
 	if(simulations.find(uid) == simulations.end()){
-		// simulation for this solver not found. create a new one
+		// simulation for this solver not found. create a new one anyway
 		std::cout << "New PhysBAM simulation instace created for solver: " << uid << std::endl;
 		simulations[uid] = hpi_create_simulation();
 		printf("sim %p\n", simulations[uid]);
 	}else{
+		// simulation exists
+		if(reset){
+			std::cout << "Resetting simulation instance for solver: " << uid << std::endl;
+			hpi_destroy_simulation(simulations[uid]);
+			simulations[uid] = hpi_create_simulation();
+		}
 		std::cout << "Using existing simulation instance for solver: " << uid << std::endl;
 	}
 	return simulations[uid];
