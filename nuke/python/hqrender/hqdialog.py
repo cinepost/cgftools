@@ -91,7 +91,7 @@ class HQClientGroupsDialog ( PythonPanel ):
 				self.addKnob( nuke.Text_Knob("No %s available from server." % mode) )				
 
 	def showModalDialog( self ):
-		result = nukescripts.PythonPanel.showModalDialog( self )
+		result = PythonPanel.showModalDialog( self )
 		if result:
 			result_items = ""
 			for entry in self.entries:
@@ -118,7 +118,7 @@ class HQrenderDialog( PythonPanel ):
 			title = "HQrender All"
 			self.input_node = None
 	
-		nukescripts.PythonPanel.__init__( self,title, "uk.co.thefoundry.FramePanel" )
+		PythonPanel.__init__( self,title, "uk.co.thefoundry.FramePanel" )
 		self.setMinimumSize(800, 260)	
 		
 		try:
@@ -298,7 +298,7 @@ class HQrenderDialog( PythonPanel ):
 			self.selgroups.setEnabled(False)
 				
 	def showModalDialog( self ):
-		result = nukescripts.PythonPanel.showModalDialog( self )			
+		result = PythonPanel.showModalDialog( self )			
 		if result:
 			nuke.knob('root.hqcfg', pickle.dumps(self._state._state)) # store knobs inside script
 			self.generateHQJob()

@@ -2,6 +2,8 @@
 #define __SIM_pbSolver_h__
 
 #include "wrapper_header.h"
+interface_routines ir;
+
 #include "HPI_trimesh.h"
 
 #include <fstream>
@@ -54,9 +56,6 @@
 #include <UT/UT_Vector3.h>
 #include <UT/UT_WorkBuffer.h>
 #include <UT/UT_Interrupt.h>
-
-#include "HPI_trimesh.h"
-#include "HPI_functs.h"
 
 class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
 {	

@@ -63,14 +63,15 @@ except:
 
 mapping = conf.get('cross_path')
 mode = os.environ.get('HQ_NK_MODE')
-out_nodes = [w for w in RecursiveFindNodes(['Write'], nuke.root())]
+sys.stdout.write('Rendering mode is %s' % mode)
+out_nodes = None
 if mode == 'selected':
 	nk_nodes = os.environ.get('HQ_NK_NODES')
-	if nk_nodes: # Convert string fo form "word1;word2;word3" to list ["word1", "word2", "word3"]
+	if nk_nodes: # Convert string of form "word1;word2;word3" to list ["word1", "word2", "word3"]
 		node_names_to_process = filter( lambda a: a!="", nk_nodes.split(';'))
 		out_nodes = [nuke.toNode(n) for n in node_names_to_process]
-
-sys.stdout.write('Rendering %s nodes: %s \n' % (mode, [node.name() for node in out_nodes]))
+else:
+	out_nodes = [w for w in RecursiveFindNodes(['Write'], nuke.root())]
 	
 if cross_paths and source_os:
 	allReadWriteNodes = [w for w in RecursiveFindNodes(['Write','Read'], nuke.root())]
@@ -82,5 +83,9 @@ if cross_paths and source_os:
 # Render needed nodes
 if out_nodes:
 	for node in out_nodes:
-		nuke.execute( node, f1, f2, f3 )
-		
+		if node:
+			sys.stdout.write('Rendering node: %s ...' % node.name())
+			nuke.execute( node, f1, f2, f3 )
+			sys.stdout.write('Done. \n')
+		else:
+			sys.stderr.write('Empty node found !!!')	
