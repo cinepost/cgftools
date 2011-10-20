@@ -1,6 +1,8 @@
 #ifndef __SIM_pbDefGeometry_h__
 #define __SIM_pbDefGeometry_h__
 
+#include "HPI_trimesh.h"
+
 #include <iostream>
 
 #include <GU/GU_Detail.h>
@@ -17,6 +19,7 @@ public:
 	// This member not part of the SIM_Geometry interface;
 	// it's only accessed by your own solver
 	//MyOwnRepresentation* getMyOwnRepresentation();
+	HPI_TriMesh*	getMesh();
 
 protected:
 	explicit		SIM_pbDefGeometry(const SIM_DataFactory *factory);
@@ -42,6 +45,8 @@ private:
 
 	DECLARE_STANDARD_GETCASTTOTYPE();
 	DECLARE_DATAFACTORY(SIM_pbDefGeometry, SIM_Geometry, "PhysBAM_Deformable_Geometry", getDopDescription());
+	
+	HPI_TriMesh		*mesh;
 };
 
 #endif

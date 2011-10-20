@@ -1,6 +1,8 @@
 #ifndef __SIM_pbDefVisualize_h__
 #define __SIM_pbDefVisualize_h__
 
+#include "SIM_pbDefGeometry.h"
+
 #include <iostream>
 
 #include <UT/UT_HashTable.h>
@@ -20,7 +22,8 @@ public:
 	// it's only accessed by your own solver
 	//MyOwnRepresentation* getMyOwnRepresentation();
 	GET_GUIDE_FUNC_B(SIM_NAME_SHOWGUIDE, ShowGuide, true);
-    GET_GUIDE_FUNC_V3(SIM_NAME_COLOR, Color, (1, 0, 0));	
+    GET_GUIDE_FUNC_V3(SIM_NAME_COLOR, Color, (1, 0, 0));
+    GET_GUIDE_FUNC_B("usebox", UseBox, false);	
 
 protected:
 	explicit		SIM_pbDefVisualize(const SIM_DataFactory *factory);
@@ -46,9 +49,10 @@ private:
 	//MyOwnRepresentation* myOwnRepresentation;
 	static const SIM_DopDescription *getDopDescription();
 	mutable GU_DetailHandle myDetailHandle; // Cached GU_Detail
+	const SIM_pbDefGeometry	*defGeo;
 
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_pbDefVisualize, SIM_Geometry, "PhysBAM_Deformable_Geometry", getDopDescription());
+	DECLARE_DATAFACTORY(SIM_pbDefVisualize, SIM_Data, "PhysBAM_Visualize", getDopDescription());
 };
 
 #endif

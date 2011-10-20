@@ -8,11 +8,14 @@ PHYSBAM = /opt/PhysBAM-2011
 SOURCES = \
     ./SIM_pbSolver.cpp \
     ./SIM_pbDefGeometry.cpp \
-    ./SIM_pbDefVisualize.cpp
+    ./SIM_pbDefVisualize.cpp \
+    ./SIM_pbWorldData.cpp
 
 # Icons for custom node operators.
 ICONS = \
-    svg/DOP_pbm_def_solver.svg
+    svg/DOP_pbm_def_solver.svg \
+    svg/DOP_physbam_defgeometry.svg \
+    svg/DOP_physbam_visualize.svg
 
 # Use the highest optimization level.
 OPTIMIZER = -O3

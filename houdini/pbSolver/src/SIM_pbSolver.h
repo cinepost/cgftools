@@ -4,18 +4,14 @@
 #include "wrapper_header.h"
 interface_routines ir;
 
-#include "HPI_trimesh.h"
-
 #include <fstream>
 #include <vector>
 #include <map>
 #include <string>
 #include <iostream.h>
 #include <string.h>
-#include <strstream.h>
 #include <dlfcn.h>
 
-#include <CH/CH_LocalVariable.h>
 #include <GEO/GEO_AttributeHandle.h>
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPart.h>
@@ -31,6 +27,7 @@ interface_routines ir;
 #include <SIM/SIM_DataFilter.h>
 #include <SIM/SIM_Engine.h>
 #include <SIM/SIM_Options.h>
+#include <SIM/SIM_OptionsUser.h>
 #include <SIM/SIM_Object.h>
 #include <SIM/SIM_ObjectArray.h>
 #include <SIM/SIM_Geometry.h>
@@ -43,7 +40,6 @@ interface_routines ir;
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 #include <SIM/SIM_Solver.h>
-#include <SIM/SIM_DataFilter.h>
 #include <SIM/SIM_ConstraintIterator.h>
 #include <RBD/RBD_State.h>
 #include <UT/UT_String.h>
@@ -57,15 +53,13 @@ interface_routines ir;
 #include <UT/UT_WorkBuffer.h>
 #include <UT/UT_Interrupt.h>
 
+#include "logtools.h"
+#include "SIM_pbWorldData.h"
+
 class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
 {	
-private:
-	static	std::map<int, physbam_simulation*>	simulations;			// global store for all of the simulation instances
-	static	std::map<int, physbam_object*>		objects;				// global simulation objects storage
-	static	std::map<int, HPI_TriMesh>			meshes;					// global simulation meshes storage
-	
 public:
-	GETSET_DATA_FUNCS_F("yourownaccuracy", MyOwnAccuracy);
+	//GETSET_DATA_FUNCS_F("yourownaccuracy", MyOwnAccuracy);
 
 protected:
     explicit				SIM_pbSolver(const SIM_DataFactory *factory);
@@ -78,11 +72,11 @@ protected:
 	bool					updateSimObject(physbam_simulation* sim, SIM_Object* object);		
 		
 private:
+	SIM_PhysBAM_WorldData 	*worlddata;
 	static const SIM_DopDescription* getSolverDopDescription();
 	
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_pbSolver, SIM_Solver, "PhysBAM Deformable Solver", getSolverDopDescription());	
-	physbam_simulation*		pbSim(bool reset);								// returns existing or creates new simulation
+	DECLARE_DATAFACTORY(SIM_pbSolver, SIM_Solver, "PhysBAM_Deformable_Solver", getSolverDopDescription());	
 };
 
 #endif

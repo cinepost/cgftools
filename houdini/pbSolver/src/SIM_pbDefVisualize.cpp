@@ -1,6 +1,5 @@
 #include "SIM_pbDefVisualize.h"
 
-#include <UT/UT_DSOVersion.h>
 #include <UT/UT_Floor.h>
 #include <UT/UT_Vector3.h>
 #include <UT/UT_WorkBuffer.h>
@@ -46,14 +45,14 @@ SIM_pbDefVisualize::getDopDescription()
 	static PRM_Template	 theGuideTemplates[] = {
 	PRM_Template(PRM_TOGGLE,	1, &SIMshowguideName, PRMzeroDefaults),
 	PRM_Template(PRM_RGB,		3, &SIMcolorName, PRMoneDefaults, 0, &PRMunitRange),	
+	PRM_Template(PRM_TOGGLE,	1, &theGuideBox, PRMzeroDefaults),
 	PRM_Template()
     };
 
     static SIM_DopDescription	 theDopDescription(true,
-						   "physbam_defvisualize",
-						   "PhysBAM Deformable Visualize",
+						   "physbam_visualize",
+						   "PhysBAM Visualize",
 						   "Visualization",
-						   //"PBM_DeformableGeometry",
 						   classname(),
 						   theTemplates);
 	theDopDescription.setGuideTemplates(theGuideTemplates);					   
@@ -76,12 +75,11 @@ SIM_pbDefVisualize::buildGuideGeometrySubclass(const SIM_RootData &root,
 				    UT_DMatrix4 *,
 				    const SIM_Time &) const
 {
-	std::cout << "Build guide geo..." << std::endl;
     // Build our template geometry, if we are so asked.
     initAlternateRepresentation();
 
-	///if (gdh.isNull())
-	///return;
+	//if (gdh.isNull())
+	//	return;
 
     GU_DetailHandleAutoWriteLock	gdl(gdh);
     GU_Detail						*gdp = gdl.getGdp();
@@ -89,7 +87,7 @@ SIM_pbDefVisualize::buildGuideGeometrySubclass(const SIM_RootData &root,
     UT_Vector3						color(1,1,1);
     GEO_AttributeHandle				cd_gah;
 
-    //color = getColor(options);
+    color = getColor(options);
 
     // Find our bounding box.
     UT_Vector3				bbmin(-1,-1,-1), bbmax(1,1,1);
@@ -103,9 +101,11 @@ SIM_pbDefVisualize::buildGuideGeometrySubclass(const SIM_RootData &root,
 	cd_gah = gdp->getPointAttribute("Cd");
     }
 
-    //if (getUseBox(options))
-	//createBoundingBoxGuide(gdp, bbox, color);
-	gdp->polymeshCube (3, 3, 3, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F, 0.5F, GEO_PATCH_TRIANGLE, true);
+    if (getUseBox(options)){
+		createBoundingBoxGuide(gdp, bbox, color);
+	}else{
+		gdp->polymeshCube (3, 3, 3, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F, 0.5F, GEO_PATCH_TRIANGLE, true);
+	}
 }
 
 void
@@ -190,7 +190,6 @@ SIM_pbDefVisualize::getIsAlternateRepresentationSubclass() const
 void
 SIM_pbDefVisualize::initAlternateRepresentationSubclass(const SIM_Data &parent)
 {
-    const SIM_pbDefVisualize	*sf = SIM_DATA_CASTCONST(&parent, SIM_pbDefVisualize);
-
-    //myArray = sf;
+    const SIM_pbDefGeometry	*dg = SIM_DATA_CASTCONST(&parent, SIM_pbDefGeometry);
+    defGeo = dg;
 }

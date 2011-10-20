@@ -22,6 +22,11 @@
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 
+HPI_TriMesh*
+SIM_pbDefGeometry::getMesh(){
+	return	mesh;
+}	
+
 GU_ConstDetailHandle
 SIM_pbDefGeometry::getGeometrySubclass() const
 {
@@ -29,9 +34,7 @@ SIM_pbDefGeometry::getGeometrySubclass() const
     {
         GU_Detail* gdp = new GU_Detail();
 
-        //.. // Generate geometry for myOwnRepresentation
-        //.. // and store this geometry in gdp
-        std::cout << "Build geo..." << std::endl;
+        // Generate geometry for myOwnRepresentation and store this geometry in gdp
         gdp->polymeshCube (3, 3, 3, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F, 0.5F, GEO_PATCH_TRIANGLE, true);
     
 		myDetailHandle.allocateAndSet(gdp);
@@ -40,14 +43,14 @@ SIM_pbDefGeometry::getGeometrySubclass() const
 }
 
 SIM_pbDefGeometry::SIM_pbDefGeometry(const SIM_DataFactory *factory)
-    : BaseClass(factory)//,myVoxelArray(0)
+    : BaseClass(factory), mesh(0)
 {
 
 }
 
 SIM_pbDefGeometry::~SIM_pbDefGeometry()
 {
-	// freeArray();	
+	delete mesh;
 }
 
 const SIM_DopDescription *
@@ -67,7 +70,7 @@ SIM_pbDefGeometry::getDopDescription()
     static SIM_DopDescription	 theDopDescription(true,
 						   "physbam_defgeometry",
 						   "PhysBAM Deformable Geometry",
-						   "PBM_DeformableGeometry",
+						   "PhysBAM_Geometry",
 						   classname(),
 						   theTemplates);	   
 
@@ -90,7 +93,7 @@ void
 SIM_pbDefGeometry::initializeSubclass()
 {
     BaseClass::initializeSubclass();
-    //freeArray();
+    mesh	= 0;
     myDetailHandle.clear();
 }
 
@@ -102,21 +105,9 @@ SIM_pbDefGeometry::makeEqualSubclass(const SIM_Data *source)
     BaseClass::makeEqualSubclass(source);
     srcgeo = SIM_DATA_CASTCONST(source, SIM_pbDefGeometry);
     if( srcgeo )
-    {	/*(
-		setDivisions(srcvox->getDivisions());
-		
-		if (srcvox->myVoxelArray)
-		{
-		    // Copy over the voxels.
-		    allocateArray();
-	
-		    *myVoxelArray  = *srcvox->myVoxelArray;
-		}
-		else
-		{
-		    // No voxel array, so nothing to copy.
-		    freeArray();
-		}*/
+    {	
+		mesh			= srcgeo->mesh;
+		myDetailHandle 	= srcgeo->myDetailHandle;	
     }
 }
 
@@ -150,7 +141,6 @@ SIM_pbDefGeometry::getMemorySizeSubclass() const
     {
 		GU_DetailHandleAutoReadLock	gdl(myDetailHandle);
 		const GU_Detail	*gdp = gdl.getGdp();
-
 		mem += gdp->getMemoryUsage();
     }
     return mem;

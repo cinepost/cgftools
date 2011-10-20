@@ -1,15 +1,14 @@
 #include "SIM_pbSolver.h"
 #include "SIM_pbDefGeometry.h"
 #include "SIM_pbDefVisualize.h"
+#include "SIM_pbWorldData.h"
 
 #define		DEBUG
 #define 	PHYSLIB_FILENAME	"libPhysBAM_Wrapper.so"
 
-bool   PB_LIB_READY	= false;	
+extern interface_routines ir;
 
-std::map<int, physbam_simulation*>	SIM_pbSolver::simulations; 
-std::map<int, physbam_object*>		SIM_pbSolver::objects;
-std::map<int, HPI_TriMesh>			SIM_pbSolver::meshes;	
+bool   PB_LIB_READY	= false;	
 
 static PRM_Name		theSimeFileName("simfilename", "Simulation file");
 static PRM_Default	theSimeFileNameDefault(0, "$HIH/projects/simfile.$SF4.pbs");
@@ -20,7 +19,9 @@ initializeSIM(void *){
 	IMPLEMENT_DATAFACTORY(SIM_pbSolver);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefGeometry);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefVisualize);
+    IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
     
+    logutils_indentation = 0;
     data_exchange::register_ids();
     void* handle = dlopen(PHYSLIB_FILENAME, RTLD_LAZY);
     if(!handle){
@@ -36,19 +37,19 @@ initializeSIM(void *){
 		PB_LIB_READY = true;
 		
 		ir.physbam_init();
-		ir.set_string(0, ir.get_id(0, "playback_log"), "main.log");
+		//ir.set_string(0, ir.get_id(0, "playback_log"), "main.log");
 		ir.set_int(0, ir.get_id(0, "enable_cout_logging"), 1);
 	}
 	std::cout << "initializeSIM called." << std::endl;
-}
+};
 	
 SIM_pbSolver::SIM_pbSolver(const SIM_DataFactory *factory) : BaseClass(factory), SIM_OptionsUser(this){
 	
-}
+};
 
 SIM_pbSolver::~SIM_pbSolver(){
 	
-}
+};
 
 const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
     static PRM_Template  theTemplates[] = {
@@ -58,13 +59,13 @@ const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
 
     static SIM_DopDescription    theDopDescription(true, "pbm_def_solver", "PhysBAM Deformable Solver", SIM_SOLVER_DATANAME, classname(), theTemplates);
     return &theDopDescription;
-}	
+};	
 
 bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId();
 	SIM_pbDefGeometry* defgeo;
 	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PBM_DeformableGeometry"), SIM_pbDefGeometry);
+	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbDefGeometry);
     if (!defgeo)
     {
 		std::cout << " not a physbam deformable geo. skipping." << std::endl;
@@ -207,12 +208,29 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 			}
 		}
 		
+		/*
+		db.position.push_back(data_exchange::vf3(0,0,0));
+		db.position.push_back(data_exchange::vf3(0,0,1));
+		db.position.push_back(data_exchange::vf3(0,1,0));
+		db.position.push_back(data_exchange::vf3(0,1,1));
+		db.position.push_back(data_exchange::vf3(1,0,0));
+		db.position.push_back(data_exchange::vf3(1,0,1));
+		db.position.push_back(data_exchange::vf3(1,1,0));
+		db.position.push_back(data_exchange::vf3(1,1,1));
+		db.mesh.insert_polygon(data_exchange::vi4(7,6,2,3));
+		db.mesh.insert_polygon(data_exchange::vi4(2,6,4,0));
+		db.mesh.insert_polygon(data_exchange::vi4(1,0,4,5));
+		db.mesh.insert_polygon(data_exchange::vi4(0,1,3,2));
+		db.mesh.insert_polygon(data_exchange::vi4(3,1,5,7));
+		db.mesh.insert_polygon(data_exchange::vi4(4,6,7,5));
+		*/
+		
 		physbam_object* pb_object;
 		pb_object = ir.add_object(sim, &db);
 		if(pb_object){
-			meshes[object->getObjectId()] = trimesh;
+			//defgeo->getMesh() = &trimesh;
 			
-			objects[object->getObjectId()] = pb_object;
+			worlddata->getObjects()->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
 			std::cout << "pointer:" << pb_object << " stored for object: " << object->getObjectId() << std::endl;
 			return true;
 		}else{
@@ -225,7 +243,7 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
 	SIM_pbDefGeometry* defgeo;
 	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PBM_DeformableGeometry"), SIM_pbDefGeometry);
+	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbDefGeometry);
 	if(defgeo){
 		// Get the object's last state before this time step
 		SIM_GeometryCopy* geometry_copy(SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE));	
@@ -259,7 +277,21 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	
 SIM_Solver::SIM_Result
 SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
+	LOG_INDENT;
+	LOG("SIM_pbSolver solveObjectsSubclass() called.");		
+	
 	if(PB_LIB_READY){
+		bool new_world = false;
+		if(!worlddata){
+			new_world = true;
+			worlddata = SIM_DATA_CREATE(*this, "PhysBAM_World", SIM_PhysBAM_WorldData, SIM_DATA_RETURN_EXISTING);
+			if(!worlddata){
+				LOG("SIM_pbSolver solveObjectsSubclass() unable to get PhysBAM_World data.");
+				LOG_UNDENT;
+				return SIM_Solver::SIM_SOLVER_FAIL;
+			}
+		}
+		
 		OP_Node*				obj_parent;
 		const SIM_Object*		obj;
 		const SIM_Geometry*		sourcegeo;
@@ -271,15 +303,9 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		int						i;
 		const SIM_Time 			curr_time = engine.getSimulationTime();
 		
-		getStartTime(sim_time);
-		if( sim_time == curr_time) {
-			// This is a simulation start point, so we need to set-up simulation first
-			sim = pbSim(true);
-		}else{
-			// This is a simulation step, we need to get existing sim here
-			sim = pbSim(false);
-		}
+		sim = worlddata->getSimulation();
 		
+		/*
 		for(int s = 0; s < engine.getNumSimulationObjects(); s++){
 			obj = engine.getSimulationObject(s);
 			sourcegeo = obj->getGeometry();
@@ -297,11 +323,19 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 			}
 			//std::cout << "engine: " << engine.getSimulationObject(s)->getName() << " of subclass type: " << engine.getSimulationObject(s)->getDataTypeSubclass() << std::endl;
 		
+		}*/
+		if (new_world) {
+			// setup basic forces and ground
+			LOG("SIM_pbSolver solveObjectsSubclass() setting up simple ground:");
+			data_exchange::ground_plane gp;
+			gp.position = data_exchange::vf3(0,-10,0);
+			gp.normal = data_exchange::vf3(0,1,0);
+			ir.add_object(sim, &gp);
 		}
 		
 		// Loop through new objects and add them into sim.
 		if (newobjects.entries() > 0) {
-			std::cout << "Setting up new objects in sim:" << std::endl; 
+			LOG("SIM_pbSolver solveObjectsSubclass() setting up new objects in sim:");	
 			for( i = 0; i < newobjects.entries(); i++ ){	
 		    	if(!setupNewSimObject(sim, newobjects(i))){
 					return SIM_Solver::SIM_SOLVER_FAIL;
@@ -315,38 +349,18 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		// Update all the objects
 		// Loop through all the objects.
 		if (objects.entries() > 0){
-			std::cout << "Updating objects in sim:" << std::endl; 
+			LOG("SIM_pbSolver solveObjectsSubclass() updating objects in sim:");
 			for( i = 0; i < objects.entries(); i++ ){ 
 		    	if(!updateSimObject(sim, objects(i))){
 					return SIM_Solver::SIM_SOLVER_FAIL;
 				}  
 			}	
 		}
-			
+		LOG("Done");
+		LOG_UNDENT;			
 		return SIM_Solver::SIM_SOLVER_SUCCESS;
 	}else{
 		std::cerr << PHYSLIB_FILENAME << " not loaded!!!"<< std::endl;
 		return SIM_Solver::SIM_SOLVER_FAIL;	
 	}
-}
-
-
-physbam_simulation*		SIM_pbSolver::pbSim(bool reset){
-	int uid = getCreatorNode()->getUniqueId();
-	if(simulations.find(uid) == simulations.end()){
-		// simulation for this solver not found. create a new one anyway
-		std::cout << "New PhysBAM simulation instace created for solver: " << uid << std::endl;
-		simulations[uid] = ir.create_simulation();
-		printf("sim %p\n", simulations[uid]);
-	}else{
-		// simulation exists
-		if(reset){
-			std::cout << "Resetting simulation instance for solver: " << uid << std::endl;
-			ir.destroy_simulation(simulations[uid]);
-			simulations[uid] = ir.create_simulation();
-		}
-		std::cout << "Using existing simulation instance for solver: " << uid << std::endl;
-	}
-	return simulations[uid];
 }	
-
