@@ -24,7 +24,12 @@
 
 HPI_TriMesh*
 SIM_pbDefGeometry::getMesh(){
-	return	mesh;
+	return mesh;
+}
+
+void
+SIM_pbDefGeometry::setMesh(HPI_TriMesh* inmesh){
+	mesh = inmesh;
 }	
 
 GU_ConstDetailHandle

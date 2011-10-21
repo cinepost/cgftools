@@ -24,6 +24,19 @@ SIM_PhysBAM_WorldData::getObjects(void){
 
 physbam_simulation* 
 SIM_PhysBAM_WorldData::getSimulation(void){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::getSimulation() called.");
+	if(!simulation){
+		LOG("SIM_PhysBAM_WorldData::getSimulation() creating new simulation instace.");
+		simulation		= ir.create_simulation();
+		LOG("SIM_PhysBAM_WorldData::getSimulation() created instace: "  << simulation);
+		ir.set_string(simulation, ir.get_id(simulation, "output_directory"), "/opt/houdini/output/");
+		ir.set_string(simulation, ir.get_id(simulation, "data_directory"), "/opt/PhysBAM-2011/Public_Data");
+	}else{
+		LOG("SIM_PhysBAM_WorldData::getSimulation() using existing simulation instace: " << simulation);
+	}
+	LOG("Done");
+	LOG_UNDENT; 	
 	return simulation;
 };
 
@@ -48,8 +61,6 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
 	clear();
-	simulation		= ir.create_simulation();
-	LOG("SIM_PhysBAM_WorldData::initializeSubclass() simulation: " << simulation);
 	objects			= new std::map<int, physbam_object*>();
 	m_shareCount	= new int(1);
 	LOG("Done");
@@ -73,15 +84,21 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 }
 
 void SIM_PhysBAM_WorldData::clear(){
+	LOG_INDENT;
 	if( m_shareCount ){
 		(*m_shareCount)--;
 		if(*m_shareCount == 0){
-			ir.destroy_simulation(simulation);
+			
+			if(simulation){
+				LOG("SIM_PhysBAM_WorldData::clear() destroying sim: " << simulation);
+				ir.destroy_simulation(simulation);
+			}
 			delete	objects;				
 			delete 	m_shareCount;
 		}
 	}
-	//simulation		= 0;
+	simulation		= 0;
 	objects			= 0;		
 	m_shareCount 	= 0;
+	LOG_UNDENT;	
 }

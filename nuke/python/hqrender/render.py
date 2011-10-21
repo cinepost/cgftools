@@ -52,8 +52,14 @@ if cross_paths and source_os:
 			inScript = inScript.replace( triple[source_os], triple[OS_ENV] )
 				
 # Open .nk script
-nuke.scriptOpen( inScript )
-sys.stdout.write('Using script: %s \n' % inScript)
+sys.stdout.write('Opening script: %s \n' % inScript)
+try:
+	nuke.scriptOpen( inScript )
+except:
+	sys.stderr.write('Unable to load script %s !' % inScript)
+	exit(1)	
+else:
+	sys.stdout.write('Using script: %s \n' % inScript)
 
 # Read hidden conf node
 try:

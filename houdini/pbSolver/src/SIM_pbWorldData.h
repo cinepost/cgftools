@@ -58,6 +58,7 @@ private:
 	
 	void	clear();
 
+public:
 	physbam_simulation				*simulation;
 	std::map<int, physbam_object*>	*objects;
 	int								*m_shareCount;

@@ -20,6 +20,7 @@ public:
 	// it's only accessed by your own solver
 	//MyOwnRepresentation* getMyOwnRepresentation();
 	HPI_TriMesh*	getMesh();
+	void			setMesh(HPI_TriMesh* inmesh);
 
 protected:
 	explicit		SIM_pbDefGeometry(const SIM_DataFactory *factory);

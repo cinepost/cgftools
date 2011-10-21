@@ -10,9 +10,13 @@
 #include <UT/UT_IStream.h>
 #include <UT/UT_VoxelArray.h>
 #include <GU/GU_DetailHandle.h>
+#include <GEO/GEO_Point.h>
+#include <GEO/GEO_AttributeOwner.h>
 #include <SIM/SIM_OptionsUser.h>
 #include <SIM/SIM_SingleSolver.h>
 #include <SIM/SIM_Geometry.h>
+#include <SIM/SIM_GeometryCopy.h>
+#include <SIM/SIM_Names.h>
 
 class SIM_pbDefVisualize : public SIM_Data,
 			public SIM_OptionsUser
@@ -41,9 +45,7 @@ protected:
 							UT_DMatrix4 *xform,
 							const SIM_Time &t) const;
 						
-    static void			createBoundingBoxGuide(GU_Detail *gdp,
-							const UT_BoundingBox &bbox,
-							const UT_Vector3 &color);
+    static void			createBoundingBoxGuide(GU_Detail *gdp, const UT_BoundingBox &bbox, const UT_Vector3 &color);
 											
 private:
 	//MyOwnRepresentation* myOwnRepresentation;
