@@ -22,6 +22,21 @@ SIM_PhysBAM_WorldData::getObjects(void){
 	return objects;
 };
 
+std::map<int, physbam_force*>*
+SIM_PhysBAM_WorldData::getForces(void){
+	return forces;
+}
+
+bool
+SIM_PhysBAM_WorldData::objectExists(int id){
+	return objects->find( id ) == objects->end();
+}
+
+bool
+SIM_PhysBAM_WorldData::forceExists(int id){
+	return forces->find( id ) == forces->end();
+}
+
 physbam_simulation* 
 SIM_PhysBAM_WorldData::getSimulation(void){
 	LOG_INDENT;

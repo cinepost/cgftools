@@ -53,7 +53,6 @@
 
 using namespace HDK_Sample;
 
-
 SNOW_Solver::SNOW_Solver(const SIM_DataFactory *factory)
     : BaseClass(factory),
       SIM_OptionsUser(this)

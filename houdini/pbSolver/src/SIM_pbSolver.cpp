@@ -212,23 +212,6 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 			}
 		}
 		
-		/*
-		db.position.push_back(data_exchange::vf3(0,0,0));
-		db.position.push_back(data_exchange::vf3(0,0,5));
-		db.position.push_back(data_exchange::vf3(0,5,0));
-		db.position.push_back(data_exchange::vf3(0,5,5));
-		db.position.push_back(data_exchange::vf3(5,0,0));
-		db.position.push_back(data_exchange::vf3(5,0,5));
-		db.position.push_back(data_exchange::vf3(5,5,0));
-		db.position.push_back(data_exchange::vf3(5,5,5));
-		db.mesh.insert_polygon(data_exchange::vi4(7,6,2,3));
-		db.mesh.insert_polygon(data_exchange::vi4(2,6,4,0));
-		db.mesh.insert_polygon(data_exchange::vi4(1,0,4,5));
-		db.mesh.insert_polygon(data_exchange::vi4(0,1,3,2));
-		db.mesh.insert_polygon(data_exchange::vi4(3,1,5,7));
-		db.mesh.insert_polygon(data_exchange::vi4(4,6,7,5));
-		*/
-		
 		physbam_object* pb_object;
 		pb_object = ir.add_object(sim, &db);
 		
@@ -289,24 +272,15 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 			GU_Detail           			&gdp = *gdl.getGdp();
 			GEO_Point           			*geopt;
 			
-			/* translate in case in rigid body object
-			gdp.translate( UT_Vector3(1,0,0), 0, 0, 0.1, 0, 0); 	
-			*/
 			std::cout << "pointer:" << pb_object << " readed for object: " << object->getObjectId() << std::endl;
 			HPI_TriMesh						*trimesh = defgeo->getMesh();
-			// Integrate our velocities.
-			//FOR_ALL_GPOINTS((&gdp), geopt)
-			//{
-			//	geopt->setPos();
-			//}
+
 			std::map<GEO_Point*, int>::iterator iter;
 			for (iter = trimesh->points.begin(); iter != trimesh->points.end(); iter++) {
 				GEO_Point *pt = iter->first;
 				int			i = iter->second;
 				pt->setPos(x_array[i].data[0], x_array[i].data[1], x_array[i].data[2], 1);
 			}
-
-			
 			
 			// Store the integrated simulation state in geometry_copy
 			geometry_copy->releaseGeometry();
@@ -377,6 +351,8 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		LOG("SIM_pbSolver solveObjectsSubclass() setting up new objects in sim:");	
 		for( i = 0; i < newobjects.entries(); i++ ){	
 	    	if(!setupNewSimObject(sim, newobjects(i))){
+				LOG("SIM_pbSolver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
+				LOG_UNDENT;
 				return SIM_Solver::SIM_SOLVER_FAIL;
 			}
 		}	
@@ -393,6 +369,8 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		LOG("SIM_pbSolver solveObjectsSubclass() updating objects in sim:");
 		for( i = 0; i < objects.entries(); i++ ){ 
 	    	if(!updateSimObject(sim, objects(i))){
+				LOG("SIM_pbSolver solveObjectsSubclass() unable update object:" << objects(i)->getName());
+				LOG_UNDENT;
 				return SIM_Solver::SIM_SOLVER_FAIL;
 			}  
 		}	

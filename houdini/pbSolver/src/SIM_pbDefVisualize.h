@@ -44,14 +44,14 @@ protected:
 							const GU_DetailHandle &gdh,
 							UT_DMatrix4 *xform,
 							const SIM_Time &t) const;
-						
+			
     static void			createBoundingBoxGuide(GU_Detail *gdp, const UT_BoundingBox &bbox, const UT_Vector3 &color);
 											
 private:
 	//MyOwnRepresentation* myOwnRepresentation;
 	static const SIM_DopDescription *getDopDescription();
 	mutable GU_DetailHandle myDetailHandle; // Cached GU_Detail
-	const SIM_pbDefGeometry	*defGeo;
+	mutable const SIM_pbDefGeometry	*defGeo;
 
 	DECLARE_STANDARD_GETCASTTOTYPE();
 	DECLARE_DATAFACTORY(SIM_pbDefVisualize, SIM_Data, "PhysBAM_Visualize", getDopDescription());

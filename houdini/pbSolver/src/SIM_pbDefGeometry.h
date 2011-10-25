@@ -2,6 +2,7 @@
 #define __SIM_pbDefGeometry_h__
 
 #include "HPI_trimesh.h"
+#include "SIM_pbGeometry.h"
 
 #include <iostream>
 
@@ -9,18 +10,8 @@
 #include <SIM/SIM_Geometry.h>
 #include <SIM/SIM_GeometryCopy.h>
 
-#define SNOW_NAME_DIVISIONS	"div"
-#define SNOW_NAME_CENTER	"t"
-#define SNOW_NAME_SIZE		"size"
-
-class SIM_pbDefGeometry : public SIM_Geometry
+class SIM_pbDefGeometry : public SIM_pbGeometry
 {
-public:
-	// This member not part of the SIM_Geometry interface;
-	// it's only accessed by your own solver
-	//MyOwnRepresentation* getMyOwnRepresentation();
-	HPI_TriMesh*	getMesh();
-	void			setMesh(HPI_TriMesh* inmesh);
 
 protected:
 	explicit		SIM_pbDefGeometry(const SIM_DataFactory *factory);
@@ -35,19 +26,14 @@ protected:
 	
 	virtual void	optionChangedSubclass(const char *name);
 	virtual int64	getMemorySizeSubclass() const;
-
-	// Allows access to the GU_Detail
-	virtual GU_ConstDetailHandle getGeometrySubclass() const;
+											
+	virtual	bool	addGeometryToSimulation(physbam_simulation *simulation);										
 											
 private:
-	//MyOwnRepresentation* myOwnRepresentation;
 	static const SIM_DopDescription *getDopDescription();
-	mutable GU_DetailHandle myDetailHandle; // Cached GU_Detail
 
 	DECLARE_STANDARD_GETCASTTOTYPE();
 	DECLARE_DATAFACTORY(SIM_pbDefGeometry, SIM_Geometry, "PhysBAM_Deformable_Geometry", getDopDescription());
-	
-	HPI_TriMesh		*mesh;
 };
 
 #endif

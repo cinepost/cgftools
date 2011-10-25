@@ -22,53 +22,36 @@
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 
-HPI_TriMesh*
-SIM_pbDefGeometry::getMesh(){
-	return mesh;
-}
+#include "logtools.h"
 
-void
-SIM_pbDefGeometry::setMesh(HPI_TriMesh* inmesh){
-	mesh = inmesh;
-}	
-
-GU_ConstDetailHandle
-SIM_pbDefGeometry::getGeometrySubclass() const
-{
-    if( myDetailHandle.isNull() )
-    {
-        GU_Detail* gdp = new GU_Detail();
-
-        // Generate geometry for myOwnRepresentation and store this geometry in gdp
-        gdp->polymeshCube (3, 3, 3, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F, 0.5F, GEO_PATCH_TRIANGLE, true);
-    
-		myDetailHandle.allocateAndSet(gdp);
-    }
-    return myDetailHandle;
-}
+static PRM_Default     deformableStiffnessDefault(1e3);
+static PRM_Default     deformableDampingDefault(.01);
 
 SIM_pbDefGeometry::SIM_pbDefGeometry(const SIM_DataFactory *factory)
-    : BaseClass(factory), mesh(0)
+    : SIM_pbGeometry(factory)
 {
 
 }
 
 SIM_pbDefGeometry::~SIM_pbDefGeometry()
 {
-	delete mesh;
+
+}
+
+bool
+SIM_pbDefGeometry::addGeometryToSimulation(physbam_simulation *simulation){
+	return true;
 }
 
 const SIM_DopDescription *
 SIM_pbDefGeometry::getDopDescription()
-{
-    static PRM_Name	 theDivisionsName(SNOW_NAME_DIVISIONS, "Divisions");
-    static PRM_Name	 theCenterName(SNOW_NAME_CENTER, "Center");
-    static PRM_Name	 theSizeName(SNOW_NAME_SIZE, "Size");
+{	
+	static PRM_Name	 theStiffnessName("stiffness", "Stiffness");
+    static PRM_Name	 theDampingName("damping", "Damping");
 
     static PRM_Template	 theTemplates[] = {
-	PRM_Template(PRM_INT,		3, &theDivisionsName, PRMtenDefaults),
-	PRM_Template(PRM_XYZ,		3, &theCenterName, PRMzeroDefaults),
-	PRM_Template(PRM_XYZ,		3, &theSizeName, PRMoneDefaults),
+	PRM_Template(PRM_FLT,		1, &theStiffnessName, 	&deformableStiffnessDefault),
+	PRM_Template(PRM_FLT,		1, &theDampingName, 	&deformableDampingDefault),
 	PRM_Template()
     };
 
@@ -85,7 +68,7 @@ SIM_pbDefGeometry::getDopDescription()
 void
 SIM_pbDefGeometry::optionChangedSubclass(const char *name)
 {
-    if (!name || !strcmp(name, SNOW_NAME_DIVISIONS))
+    if (!name || !strcmp(name, "damping") || !strcmp(name, "stiffness"))
     {
 		// Any current array will be invalid now.
 		//freeArray();

@@ -36,6 +36,10 @@ class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
 	std::map<int, physbam_object*>	*getObjects();
+	bool							objectExists(int id);
+	std::map<int, physbam_force*>	*getForces();
+	bool							forceExists(int id);
+	
 	physbam_simulation				*getSimulation();
 
 protected:
@@ -61,6 +65,7 @@ private:
 public:
 	physbam_simulation				*simulation;
 	std::map<int, physbam_object*>	*objects;
+	std::map<int, physbam_force*>	*forces;
 	int								*m_shareCount;
 };
 

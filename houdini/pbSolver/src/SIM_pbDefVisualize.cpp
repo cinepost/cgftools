@@ -79,65 +79,62 @@ SIM_pbDefVisualize::buildGuideGeometrySubclass(const SIM_RootData &root,
 {
     // Build our template geometry, if we are so asked.
     LOG_INDENT;
-	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() called.");
+	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() called. With self: " << this);
 	
     initAlternateRepresentation();
-
-	//if (gdh.isNull())
-	//	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() gdh is Null.");
-	//	LOG_UNDENT;
-	//	return;
 
     GU_DetailHandleAutoWriteLock	gdl(gdh);
     GU_Detail						*gdp = gdl.getGdp();
     UT_BoundingBox					bbox;
     UT_Vector3						color(1,1,1);
 
-    // Find our bounding box.
-    UT_Vector3				bbmin(-1,-1,-1), bbmax(1,1,1);
-    bbox.initBounds(bbmin, bbmax);
 	color = getColor(options);
 	
-    if (getUseBox(options)){
-		LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() building guide bounding box.");
-		createBoundingBoxGuide(gdp, bbox, color);
-	}else{
-		if(defGeo){			
-			//if(defGeo->getGeometry().isNull())
-			//	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() defgeo gdp is NULL!!.");
-			//	LOG_UNDENT;
-			//	return;
-			if(gdp){
-				LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() building guide deo.");
-				//const GU_Detail *tmp_gdp = defGeo->getGeometry().readLock();
-				GEO_AttributeHandle	cd_gah;
-			
-				gdp->duplicate(*defGeo->getGeometry().readLock());
-				/*
-				cd_gah = gdp->getPointAttribute("Cd");
-				if (!cd_gah.isAttributeValid())
-				{
-					static float one[3] = { 1, 1, 1 };
-					gdp->addPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT, one);
-					cd_gah = gdp->getPointAttribute("Cd");
-				}
-							
-			    GB_AttributeRef          Cd_ref;
-			    Cd_ref = gdp->findPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT); //gdp->findTextureAttribute(GEO_POINT_DICT);			
-				
-				for (int i = 0; i < gdp->points().entries(); i++)
-			    {
-					GEO_Point *ppt			= gdp->points()(i);
-					UT_Vector3 Cd 			= *ppt->castAttribData<UT_Vector3>(Cd_ref);  
-			
-					Cd = color;
-				}*/
-				
-				LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() guide gdp is: " << gdp->points().entries());
-			}
-		}else{
-			LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() unable to build guide deo. no deformable found.");
+	
+	if(defGeo){			
+		//if(defGeo->getGeometry().isNull())
+		//	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() defgeo gdp is NULL!!.");
+		//	LOG_UNDENT;
+		//	return;
+
+		LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() building guide deo.");
+		GEO_AttributeHandle	cd_gah;
+		
+		
+		if(!gdp){
+			gdp = new GU_Detail();
 		}
+		
+		gdp->duplicate(*defGeo->getGeometry().readLock());
+		
+		cd_gah = gdp->getPointAttribute("Cd");
+		if (!cd_gah.isAttributeValid())
+		{
+			static float one[3] = { 1, 1, 1 };
+			gdp->addPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT, one);
+			cd_gah = gdp->getPointAttribute("Cd");
+		}
+					
+	    GB_AttributeRef          Cd_ref;
+	    Cd_ref = gdp->findPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT); //gdp->findTextureAttribute(GEO_POINT_DICT);			
+		
+		for (int i = 0; i < gdp->points().entries(); i++)
+	    {
+			GEO_Point *ppt			= gdp->points()(i);
+			UT_Vector3 Cd 			= *ppt->castAttribData<UT_Vector3>(Cd_ref);  
+	
+			Cd = color;
+		}
+		
+		if (getUseBox(options)){
+			LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() building guide bounding box.");
+			if(defGeo->getGeometry().readLock()->getPointBBox(&bbox)){
+				createBoundingBoxGuide(gdp, bbox, color);
+			}
+		}
+		
+		LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() guide gdp is: " << gdp->points().entries());
+
 	}
 	LOG("Done.");
 	LOG_UNDENT;	
@@ -154,43 +151,39 @@ SIM_pbDefVisualize::createBoundingBoxGuide(GU_Detail *gdp,
     GU_PrimPoly	*line;
     GEO_AttributeHandle	cd_gah;
 
-	/*
-    cd_gah = gdp->getPointAttribute("Cd");
-    if (!cd_gah.isAttributeValid())
-    {
-		static float one[3] = { 1, 1, 1 };
-		gdp->addPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT, one);
-		cd_gah = gdp->getPointAttribute("Cd");
-    }*/
-
     GB_PrimitiveGroup	*bboxgrp;
 	if(gdp){
+
+		cd_gah = gdp->getPointAttribute("Cd");
+		if (!cd_gah.isAttributeValid())
+		{
+			static float one[3] = { 1, 1, 1 };
+			gdp->addPointAttrib("Cd", 3 * sizeof(float), GB_ATTRIB_FLOAT, one);
+			cd_gah = gdp->getPointAttribute("Cd");
+		}
 
 		bboxgrp = gdp->findPrimitiveGroup ("bbox");
 		if(!bboxgrp){
 			bboxgrp = gdp->newPrimitiveGroup("bbox");
 		}
 	
-	    // Create the 8 points with the rule that
-	    // we use max(axis) if idx1 & (1 << axis) is true.
+	    // Create the 8 points with the rule that we use max(axis) if idx1 & (1 << axis) is true.
 	    for (idx1 = 0; idx1 < 8; idx1++)
 	    {
-		corners[idx1] = gdp->appendPoint();
-	
-		pos.x() = (idx1 & 1) ? bbox.xmax() : bbox.xmin();
-		pos.y() = (idx1 & 2) ? bbox.ymax() : bbox.ymin();
-		pos.z() = (idx1 & 4) ? bbox.zmax() : bbox.zmin();
-		corners[idx1]->getPos() = pos;
-	
-		//cd_gah.setElement(corners[idx1]);
-		//cd_gah.setV3(color);
+			corners[idx1] = gdp->appendPoint();
+		
+			pos.x() = (idx1 & 1) ? bbox.xmax() : bbox.xmin();
+			pos.y() = (idx1 & 2) ? bbox.ymax() : bbox.ymin();
+			pos.z() = (idx1 & 4) ? bbox.zmax() : bbox.zmin();
+			corners[idx1]->getPos() = pos;
+		
+			cd_gah.setElement(corners[idx1]);
+			cd_gah.setV3(color);
 	    }
 	
 	    // Create each edge.  Edges are in increaing direction of index.
-	    // Two indicies are connected if they differ in one and only one
-	    // axis.  Brute force and ignorance saves the day.
-	    // We run the n^2 possible indices and only build if the bit
-	    // field of differences matches a desired pattern.
+	    // Two indicies are connected if they differ in one and only one axis.  Brute force and ignorance saves the day.
+	    // We run the n^2 possible indices and only build if the bit field of differences matches a desired pattern.
 	    for (idx1 = 0; idx1 < 8; idx1++)
 	    {
 			for (idx2 = idx1+1; idx2 < 8; idx2++)
@@ -216,10 +209,8 @@ SIM_pbDefVisualize::createBoundingBoxGuide(GU_Detail *gdp,
 SIM_Guide *
 SIM_pbDefVisualize::createGuideObjectSubclass() const
 {
-    // Return a shared guide so that we only have to build our geometry
-    // once. But set the displayonce flag to false so that we can set
-    // a different transform for each object.
-    return new SIM_GuideShared(this, false);
+    // Return a shared guide so that we only have to build our geometry once. But set the displayonce flag to false so that we can set a different transform for each object.
+	return new SIM_GuideShared(this, false);
 }
 
 bool
