@@ -92,11 +92,6 @@ SIM_pbDefVisualize::buildGuideGeometrySubclass(const SIM_RootData &root,
 	
 	
 	if(defGeo){			
-		//if(defGeo->getGeometry().isNull())
-		//	LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() defgeo gdp is NULL!!.");
-		//	LOG_UNDENT;
-		//	return;
-
 		LOG("SIM_pbDefVisualize::buildGuideGeometrySubclass() building guide deo.");
 		GEO_AttributeHandle	cd_gah;
 		
@@ -224,7 +219,7 @@ SIM_pbDefVisualize::initAlternateRepresentationSubclass(const SIM_Data &parent)
 {
 	LOG_INDENT;
 	LOG("SIM_pbDefVisualize::initAlternateRepresentationSubclass() called.");		
-	defGeo = SIM_DATA_CASTCONST(&parent, SIM_pbDefGeometry);
+	defGeo = SIM_DATA_CASTCONST(&parent, SIM_pbGeometry);
 	LOG("Done.");
 	LOG_UNDENT;
 }

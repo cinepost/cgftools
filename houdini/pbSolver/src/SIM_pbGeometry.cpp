@@ -53,7 +53,7 @@ SIM_pbGeometry::getGeometrySubclass() const
         GU_Detail* gdp = new GU_Detail();
 
         // Generate geometry for myOwnRepresentation and store this geometry in gdp
-        gdp->polymeshCube (5, 5, 5, -.5F, .5F, -.5F, .5F, -.5F, .5F, GEO_PATCH_TRIANGLE, true);
+        gdp->polymeshCube (4, 4, 4, -.5F, .5F, -.5F, .5F, -.5F, .5F, GEO_PATCH_TRIANGLE, true);
     
 		myDetailHandle.allocateAndSet(gdp);
     }
@@ -63,9 +63,16 @@ SIM_pbGeometry::getGeometrySubclass() const
 void
 SIM_pbGeometry::initializeSubclass()
 {
+	LOG_INDENT;
+	LOG("SIM_pbGeometry::initializeSubclass() called");
+		
     SIM_Geometry::initializeSubclass();
     mesh	= 0;
     myDetailHandle.clear();
+    
+    initAlternateRepresentation();
+	LOG("Done.");
+	LOG_UNDENT;
 }
 
 void
@@ -100,8 +107,41 @@ SIM_pbGeometry::getMemorySizeSubclass() const
 void
 SIM_pbGeometry::handleModificationSubclass(int code)
 {
-    SIM_pbGeometry::handleModificationSubclass(code);
+    BaseClass::handleModificationSubclass(code);
 
     // Ensure we rebuild our display proxy geometry.
     myDetailHandle.clear();
+}
+
+bool
+SIM_pbGeometry::getIsAlternateRepresentationSubclass () const {
+	return true;
+}	
+
+void
+SIM_pbGeometry::initAlternateRepresentationSubclass (const SIM_Data &){
+	LOG_INDENT;
+	LOG("SIM_pbGeometry::initAlternateRepresentationSubclass() called");
+	LOG("Done");
+	LOG_UNDENT;
+}
+
+const SIM_DopDescription *
+SIM_pbGeometry::getDopDescription()
+{
+    static PRM_Name theMassName(NAME_MASS, "Mass");
+    
+    static PRM_Template theTemplates[] = {
+        PRM_Template(PRM_FLT_J, 1, &theMassName, PRMzeroDefaults),
+        PRM_Template()
+    };
+
+    static SIM_DopDescription theDopDescription(true,
+						   "physbam_geometry",
+						   "PhysBAM Geometry",
+						   "PhysBAM_Geometry",
+                        classname(),
+                        theTemplates);
+
+    return &theDopDescription;
 }

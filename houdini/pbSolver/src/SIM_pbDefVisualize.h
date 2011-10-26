@@ -51,7 +51,7 @@ private:
 	//MyOwnRepresentation* myOwnRepresentation;
 	static const SIM_DopDescription *getDopDescription();
 	mutable GU_DetailHandle myDetailHandle; // Cached GU_Detail
-	mutable const SIM_pbDefGeometry	*defGeo;
+	mutable const SIM_pbGeometry	*defGeo;
 
 	DECLARE_STANDARD_GETCASTTOTYPE();
 	DECLARE_DATAFACTORY(SIM_pbDefVisualize, SIM_Data, "PhysBAM_Visualize", getDopDescription());

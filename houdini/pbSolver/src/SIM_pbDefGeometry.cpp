@@ -28,7 +28,7 @@ static PRM_Default     deformableStiffnessDefault(1e3);
 static PRM_Default     deformableDampingDefault(.01);
 
 SIM_pbDefGeometry::SIM_pbDefGeometry(const SIM_DataFactory *factory)
-    : SIM_pbGeometry(factory)
+    : BaseClass(factory), SIM_OptionsUser(this)
 {
 
 }
@@ -38,16 +38,11 @@ SIM_pbDefGeometry::~SIM_pbDefGeometry()
 
 }
 
-bool
-SIM_pbDefGeometry::addGeometryToSimulation(physbam_simulation *simulation){
-	return true;
-}
-
 const SIM_DopDescription *
 SIM_pbDefGeometry::getDopDescription()
 {	
-	static PRM_Name	 theStiffnessName("stiffness", "Stiffness");
-    static PRM_Name	 theDampingName("damping", "Damping");
+	static PRM_Name	 theStiffnessName(NAME_STIFFNESS, "Stiffness");
+    static PRM_Name	 theDampingName(NAME_DAMPING, "Damping");
 
     static PRM_Template	 theTemplates[] = {
 	PRM_Template(PRM_FLT,		1, &theStiffnessName, 	&deformableStiffnessDefault),
@@ -56,89 +51,11 @@ SIM_pbDefGeometry::getDopDescription()
     };
 
     static SIM_DopDescription	 theDopDescription(true,
-						   "physbam_defgeometry",
-						   "PhysBAM Deformable Geometry",
-						   "PhysBAM_Geometry",
+						   "physbam_deformable",
+						   "PhysBAM Deformable",
+						   "PhysBAM_Deformable",
 						   classname(),
 						   theTemplates);	   
 
     return &theDopDescription;
-}
-
-void
-SIM_pbDefGeometry::optionChangedSubclass(const char *name)
-{
-    if (!name || !strcmp(name, "damping") || !strcmp(name, "stiffness"))
-    {
-		// Any current array will be invalid now.
-		//freeArray();
-    }
-
-    SIM_OptionsUser::optionChangedSubclass(name);
-}
-
-void
-SIM_pbDefGeometry::initializeSubclass()
-{
-    BaseClass::initializeSubclass();
-    mesh	= 0;
-    myDetailHandle.clear();
-}
-
-void
-SIM_pbDefGeometry::makeEqualSubclass(const SIM_Data *source)
-{
-    const SIM_pbDefGeometry	*srcgeo;
-
-    BaseClass::makeEqualSubclass(source);
-    srcgeo = SIM_DATA_CASTCONST(source, SIM_pbDefGeometry);
-    if( srcgeo )
-    {	
-		mesh			= srcgeo->mesh;
-		myDetailHandle 	= srcgeo->myDetailHandle;	
-    }
-}
-
-void
-SIM_pbDefGeometry::saveSubclass(ostream &os) const
-{
-	const UT_Options	opts;
-    BaseClass::saveSubclass(os);
-    myDetailHandle.readLock()->save(os, 1, &opts);
-}
-
-bool
-SIM_pbDefGeometry::loadSubclass(UT_IStream &is)
-{
-	if (!BaseClass::loadSubclass(is))
-	return false;
-
-	const UT_Options	opts;
-	myDetailHandle.writeLock()->load(is, &opts);
-
-	return true;
-}
-
-int64
-SIM_pbDefGeometry::getMemorySizeSubclass() const
-{
-    int64		mem;
-
-    mem = sizeof(*this);
-    if (!myDetailHandle.isNull())
-    {
-		GU_DetailHandleAutoReadLock	gdl(myDetailHandle);
-		const GU_Detail	*gdp = gdl.getGdp();
-		mem += gdp->getMemoryUsage();
-    }
-    return mem;
-}
-
-void
-SIM_pbDefGeometry::handleModificationSubclass(int code)
-{
-    BaseClass::handleModificationSubclass(code);
-
-    // Ensure we rebuild our display proxy geometry.
-    myDetailHandle.clear();
 }

@@ -21,6 +21,7 @@ void
 initializeSIM(void *){
 	srand((unsigned)time(0));
 	IMPLEMENT_DATAFACTORY(SIM_pbSolver);
+	IMPLEMENT_DATAFACTORY(SIM_pbGeometry);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefGeometry);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefVisualize);
     IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
@@ -67,9 +68,9 @@ const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
 
 bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId();
-	SIM_pbDefGeometry* defgeo;
+	SIM_pbGeometry* defgeo;
 	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbDefGeometry);
+	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
     if (!defgeo)
     {
 		std::cout << " not a physbam deformable geo. skipping." << std::endl;
@@ -149,7 +150,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 						}
 						
 						
-						std::cout << "indexes3:" << i1 << " " << i2 << " " << i3 << std::endl;
+						//std::cout << "indexes3:" << i1 << " " << i2 << " " << i3 << std::endl;
 						db.mesh.insert_polygon(data_exchange::vi3(i3, i2, i1));
 						break;
 					case 4:
@@ -201,7 +202,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 							i4 = pb_vertex_index++;
 						}					
 						
-						std::cout << "indexes4:" << i1 << " " << i2 << " " << i3 << " " << i4 << std::endl;
+						//std::cout << "indexes4:" << i1 << " " << i2 << " " << i3 << " " << i4 << std::endl;
 						
 						db.mesh.insert_polygon(data_exchange::vi4(i4, i3, i2, i1));				
 						break;
@@ -238,8 +239,8 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 				int len = ir.get_vf3_array_length(pb_object, xid);
 				std::vector<data_exchange::vf3> x_array(len);
 				ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-				for(size_t i=0; i<x_array.size(); i++)
-				printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
+				//for(size_t i=0; i<x_array.size(); i++)
+				//printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
 			}
 			
 			return true;
@@ -251,19 +252,19 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 }
 bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
-	SIM_pbDefGeometry* defgeo;
+	SIM_pbGeometry* defgeo;
 	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbDefGeometry);
+	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
 	if(defgeo){
 		physbam_object* pb_object = worlddata->getObjects()->find(object->getObjectId())->second;
 		if(pb_object){
-			std::cout << "\t readed points back for object " << object->getName() << " id: " << object->getObjectId() << std::endl;
+			//std::cout << "\t readed points back for object " << object->getName() << " id: " << object->getObjectId() << std::endl;
 			int xid = ir.get_id(pb_object, "position");
 			int len = ir.get_vf3_array_length(pb_object, xid);
 			std::vector<data_exchange::vf3> x_array(len);
 			ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-			for(size_t i=0; i<x_array.size(); i++)
-			printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
+			//for(size_t i=0; i<x_array.size(); i++)
+			//printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
 	
 			// Get the object's last state before this time step
 			SIM_GeometryCopy* geometry_copy(SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE));	
