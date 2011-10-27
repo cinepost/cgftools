@@ -103,6 +103,7 @@ class HQrenderDialog( PythonPanel ):
 	def __init__(self, mode ):
 		self._state = _hqRenderDialogState
 		self.hqmode = mode
+		self.maps = []
 		hqrenderConfig = None
 		try:
 			hqrenderConfig = minidom.parse(os.path.expanduser('~/.nuke/hqrenderConfig.xml'))
@@ -214,8 +215,10 @@ class HQrenderDialog( PythonPanel ):
 			for key in groups.keys():
 				self.addKnob( nuke.Text_Knob(key))	
 				paths = groups[key]
-				for path in paths.keys():	
-					self.addKnob( nuke.String_Knob(key + path, path, paths[path]) )
+				for path in paths.keys():
+					button = nuke.String_Knob("%s.%s" % (key, path), path, paths[path])
+					self.maps += [button]	
+					self.addKnob( button )
 				
 		# Fill defaults
 		self.rangeinput.setValue(self._state.get(self.rangeinput, 0))
@@ -237,14 +240,31 @@ class HQrenderDialog( PythonPanel ):
 	def knobChanged( self, knob):
 		if knob == self.mode:
 			self.updateScriptMode()
+		elif knob in self.maps:
+			self.updateMapping()	
 		elif knob == self.assignto:
 			self.updateAssignment()
 		elif knob == self.rangeinput:
 			self.updateFrameRange()	
 		elif knob in [self.f1, self.f2, self.f3]:
-			self.storeFrames()
+			self.storeFrames()	
 
 		self._state.save(knob) 
+
+	def updateMapping( self ):
+		mapping = {}
+		for knob in self.maps:
+			path =  knob.name().split(".")
+			#groups = self._state.getValue('cross_path')
+			group = path[0]
+			arch  = path[1]
+			if group in mapping:
+				mapping[group].update({arch: knob.getValue()})
+			else:	
+				mapping[group] = {arch: knob.getValue()}
+				
+		#raise BaseException("Mapping: %s" % mapping)
+		self._state.saveValue('cross_path', mapping)		
 
 	def storeFrames( self ):
 		if self.rangeinput.value() == 'custom':

@@ -48,7 +48,8 @@ if cross_paths and source_os:
 	else:
 		for key in cross_paths.keys():
 			sys.stdout.write('Replacing script path form %s to %s \n' % (source_os, OS_ENV))
-			triple = cross_paths[key]	
+			triple = cross_paths[key]
+			sys.stdout.write('Replacing: %s to %s \n' % (triple[source_os], triple[OS_ENV]))	
 			inScript = inScript.replace( triple[source_os], triple[OS_ENV] )
 				
 # Open .nk script
