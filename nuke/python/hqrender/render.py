@@ -1,6 +1,7 @@
 import nuke, os, sys
 import getopt 
 import cPickle as pickle
+import re
 OS_ENV = ""		
 		
 if nuke.env["LINUX"]:
@@ -21,7 +22,14 @@ def RecursiveFindNodes(nodeClasses, startNode):
 def fixOSPaths( nodes, inPattern, outPattern ):
 	for node in nodes:
 		path = node['file'].value()
-		path = path.replace( inPattern, outPattern )
+		
+		# Case sensitive replace
+		#path = path.replace( inPattern, outPattern )
+		
+		# Case insensitive replace
+		insensitive_inPattern = re.compile(re.escape(inPattern), re.IGNORECASE)
+		path = insensitive_inPattern.sub(outPattern, path)
+		
 		node['file'].setValue( path )
 
 sys.stdout.write('ARGV       : %s \n' % sys.argv[1:])
