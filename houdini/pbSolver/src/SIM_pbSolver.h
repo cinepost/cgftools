@@ -2,7 +2,7 @@
 #define __SIM_pbSolver_h__
 
 #include "wrapper_header.h"
-interface_routines ir;
+//interface_routines ir;
 
 #include <fstream>
 #include <vector>
@@ -53,8 +53,11 @@ interface_routines ir;
 #include <UT/UT_WorkBuffer.h>
 #include <UT/UT_Interrupt.h>
 
-#include "logtools.h"
+#include "SIM_pbDefGeometry.h"
+#include "SIM_pbDefVisualize.h"
 #include "SIM_pbWorldData.h"
+
+#include "logtools.h"
 
 class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
 {	

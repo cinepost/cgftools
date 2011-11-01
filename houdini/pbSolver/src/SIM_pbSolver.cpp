@@ -1,7 +1,4 @@
 #include "SIM_pbSolver.h"
-#include "SIM_pbDefGeometry.h"
-#include "SIM_pbDefVisualize.h"
-#include "SIM_pbWorldData.h"
 
 #define		DEBUG
 #define 	PHYSLIB_FILENAME	"libPhysBAM_Wrapper.so"

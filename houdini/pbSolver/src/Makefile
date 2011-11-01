@@ -1,4 +1,5 @@
 # Installation directory.
+HFS		= /opt/houdini11
 INSTDIR = $(HOME)/houdini11.1
 DEVDIR	= $(HOME)/dev/cgftools
 PHYSBAM = /opt/PhysBAM-2011
@@ -32,7 +33,7 @@ LIBDIRS = \
 
 # Additional libraries.
 LIBS = \
-	-llog4cxx \
+	#-llog4cxx \
 	#-lboost_serialization-gcc44-mt-1_37
 
 # Set the plugin library name.

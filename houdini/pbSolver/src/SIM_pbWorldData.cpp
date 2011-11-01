@@ -43,8 +43,8 @@ SIM_PhysBAM_WorldData::getSimulation(void){
 	LOG("SIM_PhysBAM_WorldData::getSimulation() called.");
 	if(!simulation){
 		LOG("SIM_PhysBAM_WorldData::getSimulation() creating new simulation instace.");
-		simulation		= ir.create_simulation();
-		LOG("SIM_PhysBAM_WorldData::getSimulation() created instace: "  << simulation);
+		simulation		= ir.create_simulation("solids");
+		LOG("SIM_PhysBAM_WorldData::getSimulation() created instance: "  << simulation);
 		ir.set_string(simulation, ir.get_id(simulation, "output_directory"), "/opt/houdini/output/");
 		ir.set_string(simulation, ir.get_id(simulation, "data_directory"), "/opt/PhysBAM-2011/Public_Data");
 	}else{
