@@ -2,7 +2,7 @@
 #define __SIM_pbSolver_h__
 
 #include "wrapper_header.h"
-//interface_routines ir;
+interface_routines ir;
 
 #include <fstream>
 #include <vector>

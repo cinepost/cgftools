@@ -64,13 +64,17 @@ const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
 };	
 
 bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object){
-	std::cout << "\t" << object->getName() << " id: " << object->getObjectId();
+	LOG_INDENT;
+	LOG("SIM_pbSolver solveObjectsSubclass() called.");
+	LOG(object->getName() << " id: " << object->getObjectId());
+	
 	SIM_pbGeometry* defgeo;
 	
 	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
     if (!defgeo)
     {
-		std::cout << " not a physbam deformable geo. skipping." << std::endl;
+		LOG("Not a PhysBAM object. Skipping...");
+		LOG_UNDENT;
 		return true;
     }else{
 		const SIM_Data	*force;
@@ -84,10 +88,10 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 	    );
 	    
 	    if(!forces.isEmpty()){
-			std::cout << "Affected by: ";
+			LOG("Affected by: ");
 			for(int i=0; i < forces.entries(); i++){
 				force = forces[i];
-				std::cout << force->getDataType();
+				LOG(force->getDataType());
 			}
 		}
 		std::cout << std::endl;
@@ -209,10 +213,11 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 				}
 			}
 		}
-		
+		LOG("Creating PhysBAM object...");
 		physbam_object* pb_object;
 		pb_object = ir.add_object(sim, &db);
 		
+		LOG("Creating PhysBAM volumetric force...");
 		data_exchange::volumetric_force vf;
 		vf.stiffness=1e3;
 		vf.damping=.01;
