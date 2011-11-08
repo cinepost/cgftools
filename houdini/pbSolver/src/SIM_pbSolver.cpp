@@ -217,33 +217,53 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 		physbam_object* pb_object;
 		pb_object = ir.add_object(sim, &db);
 		
-		LOG("Creating PhysBAM volumetric force...");
-		data_exchange::volumetric_force vf;
-		vf.stiffness=1e3;
-		vf.damping=.01;
-		physbam_force* f1 = ir.add_force(sim, &vf);
-		
-		data_exchange::gravity_force gf;
-		physbam_force* f2 = ir.add_force(sim, &gf);
-		
-		ir.apply_force_to_object(pb_object, f1);
-		ir.apply_force_to_object(pb_object, f2);
-		
-		ir.set_float(f2, ir.get_id(f2, "magnitude"), 10);
-		
 		if(pb_object){
+			/// Create volume force for deformable body
+			LOG("Creating PhysBAM volumetric force ...");
+			data_exchange::volumetric_force vf;
+			vf.stiffness=1e3;
+			vf.damping=.01;
+			physbam_force* f1 = ir.add_force(sim, &vf);
+			ir.apply_force_to_object(pb_object, f1);
+			
+			/// Add object related forces
+			if(!forces.isEmpty()){
+				LOG("Creating PhysBAM forces ...");
+				physbam_force	*pb_force;
+				int force_id	= 0;
+				
+				for(int i=0; i < forces.entries(); i++){
+					pb_force = NULL;
+					force = forces[i];
+					force_id = force->getCreatorId();
+					if(!worlddata->forceExists(force_id)){
+						// add this force to world data
+						pb_force = worlddata->addNewForce(force);
+					}else{
+						// use existing force
+						LOG("Bind existing force " << force->getDataType());	
+						pb_force = worlddata->getForce(force_id);
+					}
+					
+					if(pb_force)
+						ir.apply_force_to_object(pb_object, pb_force);		
+				}
+			}
+			
+			/// Set trimesh for this object and add it to the world
+			LOG("Adding PhysBAM body to worlddata ..."); 
 			defgeo->setMesh(trimesh);		
 			worlddata->getObjects()->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
 			std::cout << "pointer:" << pb_object << " stored for object: " << object->getObjectId() << std::endl;
 			
-			{
-				int xid = ir.get_id(pb_object, "position");
-				int len = ir.get_vf3_array_length(pb_object, xid);
-				std::vector<data_exchange::vf3> x_array(len);
-				ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-				//for(size_t i=0; i<x_array.size(); i++)
-				//printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
-			}
+			//~ {
+				//~ int xid = ir.get_id(pb_object, "position");
+				//~ int len = ir.get_vf3_array_length(pb_object, xid);
+				//~ std::vector<data_exchange::vf3> x_array(len);
+				//~ ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
+				//~ for(size_t i=0; i<x_array.size(); i++)
+				//~ printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
+			//~ }
 			
 			return true;
 		}else{
@@ -299,6 +319,7 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	bool new_world = false;
 	worlddata = SIM_DATA_GET(*this, "PhysBAM_World", SIM_PhysBAM_WorldData);
 	if(!worlddata){
+		LOG("SIM_pbSolver solveObjectsSubclass() creating new PhysBAM_World data.");
 		new_world = true;		
 		worlddata = SIM_DATA_CREATE(*this, "PhysBAM_World", SIM_PhysBAM_WorldData, SIM_DATA_RETURN_EXISTING);
 		if(!worlddata){

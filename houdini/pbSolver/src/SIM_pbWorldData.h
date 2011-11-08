@@ -22,6 +22,7 @@
 #include <SIM/SIM_Options.h>
 #include <SIM/SIM_Object.h>
 #include <SIM/SIM_ObjectArray.h>
+#include <SIM/SIM_OptionsUser.h>
 #include <SIM/SIM_DopDescription.h>
 #include <SIM/SIM_Random.h>
 #include <SIM/SIM_RandomTwister.h>
@@ -31,15 +32,18 @@
 #include <SIM/SIM_GuideShared.h>
 #include <SIM/SIM_Geometry.h>
 #include <SIM/SIM_GeometryCopy.h>
+#include <SIM/SIM_ForceGravity.h>
 
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
-	std::map<int, physbam_object*>	*getObjects();
-	bool							objectExists(int id);
+	std::map<int, physbam_object*>		*getObjects();
+	bool								objectExists(int id);
 	std::map<int, physbam_force*>	*getForces();
-	bool							forceExists(int id);
-	
+	physbam_force						*getForce(int id);
+	bool								forceExists(int id);
+	physbam_force						*addNewForce(const SIM_Data *force);
+
 	physbam_simulation				*getSimulation();
 
 protected:
@@ -55,6 +59,8 @@ protected:
 	// To make one world equal to another, copy the data exactly. The share count lets several of these data share the same PhysBAM world and bodies without worrying that the ODE data will get deleted as long as any SIM_PhysBAM_WorldData is holding onto it.
 	virtual void makeEqualSubclass(const SIM_Data *src);
 
+	virtual void handleModificationSubclass (int code);
+
 private:
 	static const SIM_DopDescription *getDopDescription();
 	DECLARE_STANDARD_GETCASTTOTYPE();
@@ -63,10 +69,10 @@ private:
 	void	clear();
 
 public:
-	physbam_simulation				*simulation;
-	std::map<int, physbam_object*>	*objects;
-	std::map<int, physbam_force*>	*forces;
-	int								*m_shareCount;
+	physbam_simulation					*simulation;
+	std::map<int, physbam_object*>		*objects;
+	std::map<int, physbam_force*>		*forces;
+	int									*m_shareCount;
 };
 
 #endif

@@ -22,6 +22,11 @@ SIM_PhysBAM_WorldData::getObjects(void){
 	return objects;
 };
 
+physbam_force*
+SIM_PhysBAM_WorldData::getForce(int id){
+	return forces->find(id)->second;
+}
+
 std::map<int, physbam_force*>*
 SIM_PhysBAM_WorldData::getForces(void){
 	return forces;
@@ -29,12 +34,12 @@ SIM_PhysBAM_WorldData::getForces(void){
 
 bool
 SIM_PhysBAM_WorldData::objectExists(int id){
-	return objects->find( id ) == objects->end();
+	return objects->find( id ) != objects->end();
 }
 
 bool
 SIM_PhysBAM_WorldData::forceExists(int id){
-	return forces->find( id ) == forces->end();
+	return forces->find( id ) != forces->end();
 }
 
 physbam_simulation* 
@@ -76,7 +81,9 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
 	clear();
+	simulation		= NULL;
 	objects			= new std::map<int, physbam_object*>();
+	forces			= new std::map<int, physbam_force*>();
 	m_shareCount	= new int(1);
 	LOG("Done");
 	LOG_UNDENT;
@@ -90,7 +97,8 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 	if( world ){
 		clear();
 		simulation		= world->simulation;	
-		objects 		= world->objects;					
+		objects 		= world->objects;	
+		forces 			= world->forces;					
 		m_shareCount 	= world->m_shareCount;
 		(*m_shareCount)++;
 	}
@@ -116,4 +124,42 @@ void SIM_PhysBAM_WorldData::clear(){
 	objects			= 0;		
 	m_shareCount 	= 0;
 	LOG_UNDENT;	
+}
+
+void 	
+SIM_PhysBAM_WorldData::handleModificationSubclass (int code){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::handleModificationSubclass() called.");
+	BaseClass::handleModificationSubclass(code);
+	LOG("Done");
+	LOG_UNDENT;		
+}
+
+physbam_force*
+SIM_PhysBAM_WorldData::addNewForce(const SIM_Data *force){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewForce(SIM_Data *force) called.");
+	
+	physbam_force *pb_force = NULL;
+	const UT_String force_type = force->getDataType();
+	
+	if(force_type == "SIM_ForceGravity"){
+		LOG("Adding force: " << force_type);
+		const SIM_ForceGravity	*gravity = SIM_DATA_CASTCONST(force, SIM_ForceGravity);
+		
+		data_exchange::gravity_force gf;
+		pb_force = ir.add_force(getSimulation(), &gf);
+		
+		UT_Vector3 gravity_direction = gravity->getGravity();
+		data_exchange::vf3 dir(gravity_direction[0], gravity_direction[1], gravity_direction[2]); 
+		
+		ir.set_float(pb_force, ir.get_id(pb_force, "magnitude"), 1);
+		ir.set_vf3(pb_force, ir.get_id(pb_force, "direction"), dir);
+	}else{
+		LOG("Skipping unsupported force: " << force_type);
+	}
+	
+	LOG("Done");
+	LOG_UNDENT;
+	return pb_force;		
 }
