@@ -34,6 +34,9 @@
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIM/SIM_ForceGravity.h>
 
+#include "SIM_pbDefGeometry.h"
+#include "SIM_PhysBAM_Body.h"
+
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
@@ -43,6 +46,7 @@ public:
 	physbam_force						*getForce(int id);
 	bool								forceExists(int id);
 	physbam_force						*addNewForce(const SIM_Data *force);
+	physbam_object						*addNewObject(SIM_Object *object);
 
 	physbam_simulation				*getSimulation();
 

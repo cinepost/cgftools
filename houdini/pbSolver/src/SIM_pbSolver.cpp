@@ -68,165 +68,20 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 	LOG("SIM_pbSolver solveObjectsSubclass() called.");
 	LOG(object->getName() << " id: " << object->getObjectId());
 	
-	SIM_pbGeometry* defgeo;
-	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
-    if (!defgeo)
-    {
-		LOG("Not a PhysBAM object. Skipping...");
-		LOG_UNDENT;
-		return true;
-    }else{
-		const SIM_Data	*force;
-		SIM_ConstDataArray forces;
-		
-		object->filterConstSubData(
-			forces, 0,
-			SIM_DataFilterByType("SIM_Force"),
-			SIM_FORCES_DATANAME,
-			SIM_DataFilterNone()
-	    );
-	    
-	    if(!forces.isEmpty()){
-			LOG("Affected by: ");
-			for(int i=0; i < forces.entries(); i++){
-				force = forces[i];
-				LOG(force->getDataType());
-			}
-		}
-		std::cout << std::endl;
-		//----------------------------------
-		
-		const GU_Detail*				const gdp(defgeo->getGeometry().readLock());
-		const UT_Vector4F*				pt_pos;
-		const GEO_Primitive*			prim;
-		data_exchange::deformable_body 	db;
-		
-		int	pb_vertex_index = 0;
-		HPI_TriMesh						*trimesh = new HPI_TriMesh();
-
-		FOR_ALL_PRIMITIVES(gdp, prim)
-		{
-			if(prim->getPrimitiveId() == GEOPRIMPOLY){
-				const GEO_Vertex*	v;
-				GEO_Point*	p;
-				pair<std::map<GEO_Point*, int>::iterator,bool> ret;
-				int i1, i2, i3, i4;
-				switch(prim->getVertexCount()){
-					case 3:
-						v = &prim->getVertex(0);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i1 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i1 = pb_vertex_index++;
-						}	
-						
-						v = &prim->getVertex(1);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i2 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i2 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(2);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i3 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i3 = pb_vertex_index++;
-						}
-						
-						
-						//std::cout << "indexes3:" << i1 << " " << i2 << " " << i3 << std::endl;
-						db.mesh.insert_polygon(data_exchange::vi3(i3, i2, i1));
-						break;
-					case 4:
-						v = &prim->getVertex(0);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i1 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i1 = pb_vertex_index++;
-						}	
-						
-						v = &prim->getVertex(1);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i2 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i2 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(2);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i3 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i3 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(3);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i4 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i4 = pb_vertex_index++;
-						}					
-						
-						//std::cout << "indexes4:" << i1 << " " << i2 << " " << i3 << " " << i4 << std::endl;
-						
-						db.mesh.insert_polygon(data_exchange::vi4(i4, i3, i2, i1));				
-						break;
-					default:
-						std::cout << prim->getVertexCount();
-						break;
-				}
-			}
-		}
+	SIM_Data*	physbam_body = NULL;
+	physbam_body = object->getNamedSubData("PhysBAM_Body");
+    
+    if(physbam_body){
 		LOG("Creating PhysBAM object...");
-		physbam_object* pb_object;
-		pb_object = ir.add_object(sim, &db);
+		physbam_object* pb_object = worlddata->addNewObject(object);
 		
 		if(pb_object){
-			/// Create volume force for deformable body
-			LOG("Creating PhysBAM volumetric force ...");
-			data_exchange::volumetric_force vf;
-			vf.stiffness=1e3;
-			vf.damping=.01;
-			physbam_force* f1 = ir.add_force(sim, &vf);
-			ir.apply_force_to_object(pb_object, f1);
-			
 			/// Add object related forces
+			const SIM_Data	*force;
+			SIM_ConstDataArray forces;
+		
+			object->filterConstSubData( forces, 0, SIM_DataFilterByType("SIM_Force"), SIM_FORCES_DATANAME, SIM_DataFilterNone() );
+			
 			if(!forces.isEmpty()){
 				LOG("Creating PhysBAM forces ...");
 				physbam_force	*pb_force;
@@ -249,22 +104,6 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 						ir.apply_force_to_object(pb_object, pb_force);		
 				}
 			}
-			
-			/// Set trimesh for this object and add it to the world
-			LOG("Adding PhysBAM body to worlddata ..."); 
-			defgeo->setMesh(trimesh);		
-			worlddata->getObjects()->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
-			std::cout << "pointer:" << pb_object << " stored for object: " << object->getObjectId() << std::endl;
-			
-			//~ {
-				//~ int xid = ir.get_id(pb_object, "position");
-				//~ int len = ir.get_vf3_array_length(pb_object, xid);
-				//~ std::vector<data_exchange::vf3> x_array(len);
-				//~ ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-				//~ for(size_t i=0; i<x_array.size(); i++)
-				//~ printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
-			//~ }
-			
 			return true;
 		}else{
 			printf("Unable to add new object %d into simulation !!!\n", object->getObjectId());

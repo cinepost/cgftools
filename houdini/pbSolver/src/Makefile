@@ -11,7 +11,8 @@ SOURCES = \
     ./SIM_pbGeometry.cpp \
     ./SIM_pbDefGeometry.cpp \
     ./SIM_pbDefVisualize.cpp \
-    ./SIM_pbWorldData.cpp
+    ./SIM_pbWorldData.cpp \
+    #./SIM_PhysBAM_Body.cpp
 
 # Icons for custom node operators.
 ICONS = \
