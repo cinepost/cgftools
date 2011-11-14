@@ -33,6 +33,7 @@
 #include <SIM/SIM_Geometry.h>
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIM/SIM_ForceGravity.h>
+#include <SIM/SIM_EmptyData.h>
 
 #include "SIM_pbDefGeometry.h"
 #include "SIM_PhysBAM_Body.h"

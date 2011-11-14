@@ -9,10 +9,8 @@ PHYSBAM = /opt/PhysBAM-2011
 SOURCES = \
     ./SIM_pbSolver.cpp \
     ./SIM_pbGeometry.cpp \
-    ./SIM_pbDefGeometry.cpp \
     ./SIM_pbDefVisualize.cpp \
     ./SIM_pbWorldData.cpp \
-    #./SIM_PhysBAM_Body.cpp
 
 # Icons for custom node operators.
 ICONS = \
@@ -39,6 +37,8 @@ LIBS = \
 
 # Set the plugin library name.
 DSONAME = $(INSTDIR)/dso/SIM_pbSolver.so
+
+CXXFLAGS = -g
 
 # Include the GNU Makefile.
 include $(HFS)/toolkit/makefiles/Makefile.gnu

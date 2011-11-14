@@ -19,12 +19,10 @@ initializeSIM(void *){
 	srand((unsigned)time(0));
 	IMPLEMENT_DATAFACTORY(SIM_pbSolver);
 	IMPLEMENT_DATAFACTORY(SIM_pbGeometry);
-	IMPLEMENT_DATAFACTORY(SIM_pbDefGeometry);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefVisualize);
     IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
     
     logutils_indentation = 0;
-    data_exchange::register_ids();
     void* handle = dlopen(PHYSLIB_FILENAME, RTLD_LAZY);
     if(!handle){
         const char *p = dlerror();
@@ -92,10 +90,10 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 					force = forces[i];
 					force_id = force->getCreatorId();
 					if(!worlddata->forceExists(force_id)){
-						// add this force to world data
+						/// Add this force to world data
 						pb_force = worlddata->addNewForce(force);
 					}else{
-						// use existing force
+						/// Use existing force
 						LOG("Bind existing force " << force->getDataType());	
 						pb_force = worlddata->getForce(force_id);
 					}
@@ -110,6 +108,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 			return false;
 		}
 	}
+	return false;
 }
 bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
@@ -127,7 +126,7 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 			//for(size_t i=0; i<x_array.size(); i++)
 			//printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
 	
-			// Get the object's last state before this time step
+			/// Get the object's last state before this time step
 			SIM_GeometryCopy* geometry_copy(SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE));	
 			
 			GU_DetailHandleAutoWriteLock	gdl(geometry_copy->lockGeometry());
@@ -144,8 +143,7 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 				pt->setPos(x_array[i].data[0], x_array[i].data[1], x_array[i].data[2], 1);
 			}
 			
-			// Store the integrated simulation state in geometry_copy
-			geometry_copy->releaseGeometry();
+			geometry_copy->releaseGeometry(); /// Store the integrated simulation state in geometry_copy
 		}
 	}
 	return true;
@@ -181,25 +179,6 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	
 	sim = worlddata->getSimulation();	
 	
-	/*
-	for(int s = 0; s < engine.getNumSimulationObjects(); s++){
-		obj = engine.getSimulationObject(s);
-		sourcegeo = obj->getGeometry();
-		
-		std::cout << "engine: " << obj->getName() << " num subd: " << obj->getNumSubData() << " static: " << obj->getIsStatic();
-		if(!sourcegeo || sourcegeo->getGeometry().isNull()){
-			std::cout << " no geo!" << std::endl;
-		}else{
-			std::cout << " geo exist: " << sourcegeo->getGeometry().readLock()->primitives().entries() << std::endl;
-		}
-		
-		for(int d = 0; d < obj->getNumSubData(); d++){
-			const char * data_name = obj->getSubDataName(d);
-			std::cout << "data name: " << data_name << std::endl;
-		}
-		//std::cout << "engine: " << engine.getSimulationObject(s)->getName() << " of subclass type: " << engine.getSimulationObject(s)->getDataTypeSubclass() << std::endl;
-	
-	}*/
 	if (new_world) {
 		// setup basic forces and ground
 		LOG("SIM_pbSolver solveObjectsSubclass() setting up simple ground:");
@@ -209,7 +188,7 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 		ir.add_object(sim, &gp);
 	}
 	
-	// Loop through new objects and add them into sim.
+	/// Loop through new objects and add them into sim.
 	if (newobjects.entries() > 0) {
 		LOG("SIM_pbSolver solveObjectsSubclass() setting up new objects in sim:");	
 		for( i = 0; i < newobjects.entries(); i++ ){	
@@ -218,16 +197,17 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 				LOG_UNDENT;
 				return SIM_Solver::SIM_SOLVER_FAIL;
 			}
-		}	
+		}
+		/// exit with success. we don't want to run actual simulation here
+		return SIM_Solver::SIM_SOLVER_SUCCESS;	
 	}
 	
-	// Run the simulation for the given time_step
-	LOG("SIM_pbSolver solveObjectsSubclass() running ir.simulate_frame with sim:" << sim);	
+	/// Run the simulation for the given time_step
+	LOG("SIM_pbSolver solveObjectsSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << timestep);	
 	ir.simulate_frame(sim, timestep);
+	LOG("SIM_pbSolver solveObjectsSubclass() simulated.");	
 	
-	// Update all the objects
-	// Loop through all the objects.
-	
+	/// Update all the objects
 	if (objects.entries() > 0){
 		LOG("SIM_pbSolver solveObjectsSubclass() updating objects in sim:");
 		for( i = 0; i < objects.entries(); i++ ){ 

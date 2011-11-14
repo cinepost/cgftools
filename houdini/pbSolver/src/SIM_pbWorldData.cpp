@@ -9,6 +9,7 @@ extern interface_routines ir;
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
 	simulation(0),
 	objects(0),
+	forces(0),
 	m_shareCount(0){
 
 };
@@ -53,7 +54,7 @@ SIM_PhysBAM_WorldData::getSimulation(void){
 		ir.set_string(simulation, ir.get_id(simulation, "output_directory"), "/opt/houdini/output/");
 		ir.set_string(simulation, ir.get_id(simulation, "data_directory"), "/opt/PhysBAM-2011/Public_Data");
 	}else{
-		LOG("SIM_PhysBAM_WorldData::getSimulation() using existing simulation instace: " << simulation);
+		LOG("SIM_PhysBAM_WorldData::getSimulation() using existing simulation instance: " << simulation);
 	}
 	LOG("Done");
 	LOG_UNDENT; 	
@@ -108,6 +109,7 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 
 void SIM_PhysBAM_WorldData::clear(){
 	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::clear() called.");
 	if( m_shareCount ){
 		(*m_shareCount)--;
 		if(*m_shareCount == 0){
@@ -123,16 +125,20 @@ void SIM_PhysBAM_WorldData::clear(){
 	simulation		= 0;
 	objects			= 0;		
 	m_shareCount 	= 0;
+	LOG("Done");
 	LOG_UNDENT;	
 }
 
 void 	
 SIM_PhysBAM_WorldData::handleModificationSubclass (int code){
-	LOG_INDENT;
-	LOG("SIM_PhysBAM_WorldData::handleModificationSubclass() called.");
-	BaseClass::handleModificationSubclass(code);
-	LOG("Done");
-	LOG_UNDENT;		
+	//LOG_INDENT;
+	//LOG("SIM_PhysBAM_WorldData::handleModificationSubclass() called.");
+	
+	LOG("SIM_PhysBAM_WorldData::handleModificationSubclass(" << code << ")");
+	//BaseClass::handleModificationSubclass(code);
+	
+	//LOG("Done");
+	//LOG_UNDENT;		
 }
 
 physbam_force*
@@ -180,22 +186,30 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 		LOG_UNDENT;
     }else{
 
-		SIM_Data				*body_data = object->getNamedSubData("PhysBAM_Body");
+		SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
 		
-		float 	stiffness = 1e3;
-		float 	damping = .01;
+		float	mass 				= 10.0;
+		float 	stiffness 			= 1e3;
+		float 	damping 			= .01;
 		int 	approx_number_cells = 100;		
+		bool	deformable			= true;
 		
-		/*
 		if(body_data){
-			const SIM_PhysBAM_Body 	*physbam_body = SIM_DATA_CASTCONST(body_data, SIM_PhysBAM_Body);
 			LOG("Fetching options from PhysBAM_Body object data.");
+			const SIM_Options *data = &body_data->getData();
 			
-			LOG("DEFORMABLE:" << physbam_body->getDeformable());
-			LOG("STIFFNESS: " << physbam_body->getStiffness());
-			LOG("DAMPING: " << physbam_body->getDamping());
-			LOG("APPROX CELLS NUMBER: " << physbam_body->getCellsApprox());	
-		}*/
+			if(data->hasOption("mass"))mass = data->getOptionF("mass");
+			if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
+			if(data->hasOption("damping"))damping = data->getOptionF("damping");
+			
+			LOG("MASS:" << mass);
+			LOG("DEFORMABLE:" << deformable);
+			LOG("STIFFNESS: " << stiffness);
+			LOG("DAMPING: " << damping);
+			LOG("APPROX CELLS NUMBER: " << approx_number_cells);	
+		}else{
+			
+		}
 		
 		const GU_Detail*				const gdp(pb_geometry->getGeometry().readLock());
 		const UT_Vector4F*				pt_pos;
@@ -312,6 +326,7 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			}
 		}
 	
+		db.mass = mass;
 		db.approx_number_cells = approx_number_cells;
 		pb_object = ir.add_object(getSimulation(), &db);
 		

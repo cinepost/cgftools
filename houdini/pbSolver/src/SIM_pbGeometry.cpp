@@ -24,8 +24,7 @@
 
 #include "logtools.h"
 
-SIM_pbGeometry::SIM_pbGeometry(const SIM_DataFactory *factory)
-    : BaseClass(factory), SIM_OptionsUser(this), mesh(0)
+SIM_pbGeometry::SIM_pbGeometry(const SIM_DataFactory *factory): SIM_Geometry(factory), mesh(0)
 {
 
 }
@@ -60,14 +59,37 @@ SIM_pbGeometry::getGeometrySubclass() const
 		getSopPath(sop_path);
 		
 		SOP_Node 	*sop_node = OPgetDirector()->findSOPNode( sop_path );
+		if(!sop_node){
+			/// try to get child node, in case we have OBJ_Node here
+			OBJ_Node	*obj_node = OPgetDirector()->findOBJNode( sop_path );
+			if(obj_node){
+				sop_node = obj_node->getRenderSopPtr();
+			}
+		}
 		if(sop_node){
-			//const SIM_Engine	engine 	= getEngine();
 			const SIM_Time		time	= getEngine().getSimulationTime(); 
 			OP_Context			context(time);
 			gdp->duplicate(*sop_node->getCookedGeo(context));
+			if(getUseTransform()){
+				OBJ_Node 	*obj_node = sop_node->getParent()->castToOBJNode();
+				UT_Matrix4 transform;
+				obj_node->getLocalTransform(context, transform);
+				gdp->transform(transform);	
+			}
 		}else{		
 			gdp->polymeshCube(4, 4, 4, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F, 0.5F, GEO_PATCH_QUADS, true);	
 		}	
+		
+		/// Apply initial state transform
+		UT_Matrix4 xform(1);
+		UT_Vector3F	pos = getInitTranslate();
+		UT_Vector3F	rot = getInitRotate();
+		UT_Vector3F	scale = getInitScale();
+		
+		const UT_XformOrder xform_order(	UT_XformOrder::RST, UT_XformOrder::XYZ ); 		
+		
+		xform.xform(xform_order, pos.x(), pos.y(), pos.z(), rot.x(), rot.y(), rot.z(), scale.x(), scale.y(), scale.z());
+		gdp->transform(xform);
 		
 		myDetailHandle.allocateAndSet(gdp);
     }
@@ -77,15 +99,15 @@ SIM_pbGeometry::getGeometrySubclass() const
 void
 SIM_pbGeometry::initializeSubclass()
 {
-	LOG_INDENT;
-	LOG("SIM_pbGeometry::initializeSubclass() called");
+	//LOG_INDENT;
+	//LOG("SIM_pbGeometry::initializeSubclass() called");
 		
     SIM_Data::initializeSubclass();
     mesh	= 0;
     myDetailHandle.clear();
     
-	LOG("Done.");
-	LOG_UNDENT;
+	//LOG("Done.");
+	//LOG_UNDENT;
 }
 
 void
@@ -120,16 +142,17 @@ SIM_pbGeometry::getMemorySizeSubclass() const
 void
 SIM_pbGeometry::handleModificationSubclass(int code)
 {
-    BaseClass::handleModificationSubclass(code);
+    //BaseClass::handleModificationSubclass(code);
 
-    // Ensure we rebuild our display proxy geometry.
-    myDetailHandle.clear();
+    /// Ensure we rebuild our display proxy geometry.
+    //myDetailHandle.clear();
+    LOG("SIM_pbGeometry::handleModificationSubclass(" << code << ")");
 }
 
 SIM_Guide *
 SIM_pbGeometry::createGuideObjectSubclass() const
 {
-    // Return a shared guide so that we only have to build our geometry once. But set the displayonce flag to false so that we can set a different transform for each object.
+    /// Return a shared guide so that we only have to build our geometry once. But set the displayonce flag to false so that we can set a different transform for each object.
 	return new SIM_GuideShared(this, false);
 }
 
@@ -140,35 +163,45 @@ SIM_pbGeometry::buildGuideGeometrySubclass(const SIM_RootData &root,
                                     UT_DMatrix4 *,
                                     const SIM_Time &) const
 {
-	LOG_INDENT;
-	LOG("SIM_pbGeometry::buildGuideGeometrySubclass() called. With self: " << this);
-	
-	GU_DetailHandleAutoWriteLock        gdl(gdh);
-    GU_Detail                           *gdp = gdl.getGdp();
+	//LOG_INDENT;
+	//LOG("SIM_pbGeometry::buildGuideGeometrySubclass() called. With self: " << this);
+	if(getDisplayGeo()){
+		GU_DetailHandleAutoWriteLock        gdl(gdh);
+		GU_Detail                           *gdp = gdl.getGdp();
     
-    if(!gdp){
-		gdp = new GU_Detail();
-	}
+		if(!gdp)gdp = new GU_Detail();
 		
-	gdp->duplicate(*getGeometry().readLock());
-    
-    LOG("Done.");
-	LOG_UNDENT;		
+		gdp->duplicate(*getGeometry().readLock());
+	}
+    //LOG("Done.");
+	//LOG_UNDENT;		
 }    
 
 const SIM_DopDescription *
 SIM_pbGeometry::getDopDescription()
 {
-	static PRM_Name	theGuideBox("usebox", "Bounding Box");
-    static PRM_Name theMassName(NAME_MASS, "Mass");
-    static PRM_Name sopPathName(NAME_SOP_PATH, "SOP Path");
+	static PRM_Name displayGeoName(NAME_DISPLAY_GEO, "Display Geometry");
+    static PRM_Name sopPathName(SIM_NAME_SOPPATH, "SOP Path");
+    static PRM_Name primGroupsName(SIM_NAME_PRIMGROUP, "Primitive Groups");
+	static PRM_Name useTransformName(SIM_NAME_USETRANSFORM, "Use Object Transform");
+	static PRM_Name initTranslateName(NAME_TRANSLATE, "Position");
+	static PRM_Name initRotateName(NAME_ROTATE, "Rotation");
+	static PRM_Name initScaleName(NAME_SCALE, "Scale");
+    
+    static PRM_Default  displayDefault(1);
+    static PRM_Default  transformDefault(0);
+    static PRM_Default  primGroupsDefault(0, "*");
+    static PRM_Default  primSopPathDefault(0, "./defaultgeo");
+    static PRM_Default 	scaleDefault[3] = {PRM_Default(1), PRM_Default(1), PRM_Default(1)};
     
     static PRM_Template theTemplates[] = {
-		PRM_Template(PRM_TOGGLE,	1, &SIMshowguideName, PRMzeroDefaults),
-		PRM_Template(PRM_RGB,		3, &SIMcolorName,	PRMoneDefaults, 0, &PRMunitRange),	
-		PRM_Template(PRM_TOGGLE,	1, &theGuideBox,	PRMzeroDefaults),		
-        PRM_Template(PRM_FLT_J, 	1, &theMassName,	PRMzeroDefaults),
+		PRM_Template(PRM_TOGGLE,    1, &displayGeoName, 		&displayDefault),
 		PRM_Template(PRM_STRING,	PRM_TYPE_DYNAMIC_PATH, 1, &sopPathName, 0, 0, 0, 0, &PRM_SpareData::sopPath),
+		PRM_Template(PRM_STRING, 	1, &primGroupsName, 		&primGroupsDefault),
+		PRM_Template(PRM_TOGGLE,    1, &useTransformName, 		&transformDefault),
+		PRM_Template(PRM_XYZ,    	3, &initTranslateName, 		PRMzeroDefaults),
+		PRM_Template(PRM_XYZ,    	3, &initRotateName, 		PRMzeroDefaults),
+		PRM_Template(PRM_XYZ,    	3, &initScaleName, 			&scaleDefault[0]),
         PRM_Template()
     };
 

@@ -38,3 +38,8 @@ SIM_PhysBAM_Body::initializeSubclass()
 {
     SIM_Data::initializeSubclass();
 }
+
+int
+SIM_PhysBAM_Body::numOptions(void){
+	return getOptions().getNumOptions();
+}

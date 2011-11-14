@@ -20,10 +20,13 @@ class SIM_PhysBAM_Body : public SIM_Data,
 			public SIM_OptionsUser
 {
 public:
-	GET_DATA_FUNC_B("deformable", Deformable);
-	GET_DATA_FUNC_F("stiffness", Stiffness);
-    GET_DATA_FUNC_F("damping", Damping);
-    GET_DATA_FUNC_I("approx_number_of_cells", CellsApprox);	
+	GETSET_DATA_FUNCS_F("mass", Mass);
+	GETSET_DATA_FUNCS_B("deformable", Deformable);
+	GETSET_DATA_FUNCS_F("stiffness", Stiffness);
+    GETSET_DATA_FUNCS_F("damping", Damping);
+    GETSET_DATA_FUNCS_I("approx_number_of_cells", CellsApprox);
+    
+    int	numOptions(void);	
 
 protected:
 	explicit 	SIM_PhysBAM_Body(const SIM_DataFactory *factory);

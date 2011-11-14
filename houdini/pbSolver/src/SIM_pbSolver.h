@@ -68,7 +68,7 @@ protected:
     explicit				SIM_pbSolver(const SIM_DataFactory *factory);
     virtual					~SIM_pbSolver();
     
-	// This implements our own solver step
+	/// This implements our own solver step
 	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
 	
 	bool					setupNewSimObject(physbam_simulation* sim, SIM_Object* object);
