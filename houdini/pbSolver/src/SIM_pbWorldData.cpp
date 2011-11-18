@@ -7,7 +7,7 @@ extern interface_routines ir;
 #include "logtools.h"
 
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
-	simulation(0),
+	simulation(NULL),
 	objects(0),
 	forces(0),
 	m_shareCount(0){
@@ -79,15 +79,15 @@ SIM_PhysBAM_WorldData::getDopDescription()
 }
 
 void SIM_PhysBAM_WorldData::initializeSubclass(){
-	LOG_INDENT;
-	LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
+	//LOG_INDENT;
+	//LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
 	clear();
 	simulation		= NULL;
 	objects			= new std::map<int, physbam_object*>();
 	forces			= new std::map<int, physbam_force*>();
 	m_shareCount	= new int(1);
-	LOG("Done");
-	LOG_UNDENT;
+	//LOG("Done");
+	//LOG_UNDENT;
 };
 
 void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
@@ -108,25 +108,32 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 }
 
 void SIM_PhysBAM_WorldData::clear(){
-	LOG_INDENT;
-	LOG("SIM_PhysBAM_WorldData::clear() called.");
+	//LOG_INDENT;
+	//LOG("SIM_PhysBAM_WorldData::clear() called.");
 	if( m_shareCount ){
 		(*m_shareCount)--;
 		if(*m_shareCount == 0){
-			
 			if(simulation){
 				LOG("SIM_PhysBAM_WorldData::clear() destroying sim: " << simulation);
 				ir.destroy_simulation(simulation);
 			}
-			delete	objects;				
+			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ) {
+				delete it->second;
+			}
+			objects->clear();
+			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ) {
+				delete it->second;
+			}
+			forces->clear();
 			delete 	m_shareCount;
 		}
 	}
-	simulation		= 0;
-	objects			= 0;		
+	simulation		= NULL;
+	objects			= NULL;
+	forces			= NULL;					
 	m_shareCount 	= 0;
-	LOG("Done");
-	LOG_UNDENT;	
+	//LOG("Done");
+	//LOG_UNDENT;	
 }
 
 void 	
@@ -134,8 +141,8 @@ SIM_PhysBAM_WorldData::handleModificationSubclass (int code){
 	//LOG_INDENT;
 	//LOG("SIM_PhysBAM_WorldData::handleModificationSubclass() called.");
 	
-	LOG("SIM_PhysBAM_WorldData::handleModificationSubclass(" << code << ")");
-	//BaseClass::handleModificationSubclass(code);
+	//LOG("SIM_PhysBAM_WorldData::handleModificationSubclass(" << code << ")");
+	BaseClass::handleModificationSubclass(code);
 	
 	//LOG("Done");
 	//LOG_UNDENT;		
@@ -188,10 +195,14 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 
 		SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
 		
-		float	mass 				= 10.0;
-		float 	stiffness 			= 1e3;
-		float 	damping 			= .01;
-		int 	approx_number_cells = 100;		
+		float		mass 				= 10.0;
+		float 		stiffness 			= 1e3;
+		float 		damping 			= .01;
+		int 		approx_number_cells = 100;
+		UT_Vector3	velocity 			= UT_Vector3(0.0f,0.0f,0.0f);
+		UT_Vector3	angular_velocity 	= UT_Vector3(0.0f,0.0f,0.0f);
+		UT_Vector3	angular_center 		= UT_Vector3(0.0f,0.0f,0.0f);
+				
 		bool	deformable			= true;
 		
 		if(body_data){
@@ -201,12 +212,9 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			if(data->hasOption("mass"))mass = data->getOptionF("mass");
 			if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
 			if(data->hasOption("damping"))damping = data->getOptionF("damping");
-			
-			LOG("MASS:" << mass);
-			LOG("DEFORMABLE:" << deformable);
-			LOG("STIFFNESS: " << stiffness);
-			LOG("DAMPING: " << damping);
-			LOG("APPROX CELLS NUMBER: " << approx_number_cells);	
+			if(data->hasOption("velocity"))velocity = data->getOptionV3("velocity");
+			if(data->hasOption("angular_velocity"))angular_velocity = data->getOptionV3("angular_velocity");
+			if(data->hasOption("angular_center"))angular_center = data->getOptionV3("angular_center");	
 		}else{
 			
 		}
@@ -326,8 +334,12 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			}
 		}
 	
-		db.mass = mass;
-		db.approx_number_cells = approx_number_cells;
+		db.mass 				= mass;
+		db.approx_number_cells 	= approx_number_cells;
+		db.velocity 			= data_exchange::vf3(velocity.x(),velocity.y(),velocity.z());
+		db.angular_velocity 	= data_exchange::vf3(angular_velocity.x(),angular_velocity.y(),angular_velocity.z());
+		db.angular_center 		= data_exchange::vf3(angular_center.x(),angular_center.y(),angular_center.z());
+		
 		pb_object = ir.add_object(getSimulation(), &db);
 		
 		if(pb_object){

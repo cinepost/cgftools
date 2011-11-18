@@ -145,8 +145,8 @@ SIM_pbGeometry::handleModificationSubclass(int code)
     //BaseClass::handleModificationSubclass(code);
 
     /// Ensure we rebuild our display proxy geometry.
-    //myDetailHandle.clear();
-    LOG("SIM_pbGeometry::handleModificationSubclass(" << code << ")");
+    myDetailHandle.clear();
+    //LOG("SIM_pbGeometry::handleModificationSubclass(" << code << ")");
 }
 
 SIM_Guide *
