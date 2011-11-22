@@ -10,6 +10,7 @@ SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : S
 	simulation(NULL),
 	objects(0),
 	forces(0),
+	trimeshes(0),
 	m_shareCount(0){
 
 };
@@ -17,6 +18,16 @@ SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : S
 SIM_PhysBAM_WorldData::~SIM_PhysBAM_WorldData(){ 
 	clear();
 };
+
+std::map<int, HPI_TriMesh*>*
+SIM_PhysBAM_WorldData::getTriMeshes(){
+	return trimeshes;
+}
+
+HPI_TriMesh*
+SIM_PhysBAM_WorldData::getTrimesh(int id){
+	return trimeshes->find(id)->second;
+}
 
 std::map<int, physbam_object*>* 
 SIM_PhysBAM_WorldData::getObjects(void){
@@ -41,6 +52,11 @@ SIM_PhysBAM_WorldData::objectExists(int id){
 bool
 SIM_PhysBAM_WorldData::forceExists(int id){
 	return forces->find( id ) != forces->end();
+}
+
+bool
+SIM_PhysBAM_WorldData::trimeshExists(int id){
+	return trimeshes->find( id ) != trimeshes->end();
 }
 
 physbam_simulation* 
@@ -85,26 +101,29 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	simulation		= NULL;
 	objects			= new std::map<int, physbam_object*>();
 	forces			= new std::map<int, physbam_force*>();
+	trimeshes		= new std::map<int, HPI_TriMesh*>();
 	m_shareCount	= new int(1);
 	//LOG("Done");
 	//LOG_UNDENT;
 };
 
 void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
-	LOG_INDENT;
-	LOG("SIM_PhysBAM_WorldData::makeEqualSubclass() called.");
+	//LOG_INDENT;
+	//LOG("SIM_PhysBAM_WorldData::makeEqualSubclass() called.");
 	const SIM_PhysBAM_WorldData *world;
 	world = SIM_DATA_CASTCONST(src, SIM_PhysBAM_WorldData);
 	if( world ){
 		clear();
 		simulation		= world->simulation;	
 		objects 		= world->objects;	
-		forces 			= world->forces;					
+		forces 			= world->forces;
+		trimeshes 		= world->trimeshes;						
 		m_shareCount 	= world->m_shareCount;
 		(*m_shareCount)++;
 	}
-	LOG("Done");
-	LOG_UNDENT;	
+	LOG("WorldData share count: " << (*m_shareCount));
+	//LOG("Done");
+	//LOG_UNDENT;	
 }
 
 void SIM_PhysBAM_WorldData::clear(){
@@ -121,16 +140,24 @@ void SIM_PhysBAM_WorldData::clear(){
 				delete it->second;
 			}
 			objects->clear();
+			
 			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ) {
 				delete it->second;
 			}
 			forces->clear();
+
+			for ( typename std::map<int, HPI_TriMesh*>::iterator it = trimeshes->begin(); it != trimeshes->end(); ++it ) {
+				delete it->second;
+			}
+			trimeshes->clear();
+
 			delete 	m_shareCount;
 		}
 	}
 	simulation		= NULL;
 	objects			= NULL;
-	forces			= NULL;					
+	forces			= NULL;
+	trimeshes		= NULL;							
 	m_shareCount 	= 0;
 	//LOG("Done");
 	//LOG_UNDENT;	
@@ -183,16 +210,21 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 	LOG("SIM_PhysBAM_WorldData::addNewObject(const SIM_Object *object) called.");
 	
 	physbam_object *pb_object = NULL;
-	SIM_pbGeometry* pb_geometry;
+	SIM_SopGeometry* geometry;
 	
-	pb_geometry = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
+	geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
 	
-    if (!pb_geometry)
+    if (!geometry)
     {
 		LOG("This object has no geometry. Skipping !!!");
 		LOG_UNDENT;
     }else{
 
+		//if( !SIM_DATA_GET(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy) )
+        //{
+        //    SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, 0);
+		//}
+		
 		SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
 		
 		float		mass 				= 10.0;
@@ -219,7 +251,7 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			
 		}
 		
-		const GU_Detail*				const gdp(pb_geometry->getGeometry().readLock());
+		const GU_Detail*				const gdp(geometry->getGeometry().readLock());
 		const UT_Vector4F*				pt_pos;
 		const GEO_Primitive*			prim;
 		data_exchange::deformable_body 	db;
@@ -351,8 +383,8 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 				//~ for(size_t i=0; i<x_array.size(); i++)
 				//~ printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
 			//~ }
-			LOG("PhysBAM object " << object->getObjectId() << " added to worlddata with pointer: " << pb_object ); 
-			pb_geometry->setMesh(trimesh);		
+			LOG("PhysBAM object " << object->getObjectId() << " added to worlddata with pointer: " << pb_object ); 		
+			trimeshes->insert( std::pair<int, HPI_TriMesh*>(object->getObjectId(), trimesh));
 			objects->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
 			
 			/// Create volume force for deformable body

@@ -31,6 +31,7 @@ interface_routines ir;
 #include <SIM/SIM_Object.h>
 #include <SIM/SIM_ObjectArray.h>
 #include <SIM/SIM_Geometry.h>
+#include <SIMZ/SIM_SopGeometry.h>
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIM/SIM_DopDescription.h>
 #include <SIM/SIM_Random.h>

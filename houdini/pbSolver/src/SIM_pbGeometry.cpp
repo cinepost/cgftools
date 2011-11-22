@@ -163,18 +163,20 @@ SIM_pbGeometry::buildGuideGeometrySubclass(const SIM_RootData &root,
                                     UT_DMatrix4 *,
                                     const SIM_Time &) const
 {
-	//LOG_INDENT;
-	//LOG("SIM_pbGeometry::buildGuideGeometrySubclass() called. With self: " << this);
+	LOG_INDENT;
+	LOG("SIM_pbGeometry::buildGuideGeometrySubclass() called. With self: " << this);
 	if(getDisplayGeo()){
-		GU_DetailHandleAutoWriteLock        gdl(gdh);
+		gdh.unlock(myDetailHandle.peekDetail());
+		/*GU_DetailHandleAutoWriteLock        gdl(gdh);
 		GU_Detail                           *gdp = gdl.getGdp();
     
 		if(!gdp)gdp = new GU_Detail();
 		
 		gdp->duplicate(*getGeometry().readLock());
+		*/
 	}
-    //LOG("Done.");
-	//LOG_UNDENT;		
+    LOG("Done.");
+	LOG_UNDENT;		
 }    
 
 const SIM_DopDescription *

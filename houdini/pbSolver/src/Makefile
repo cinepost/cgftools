@@ -8,7 +8,6 @@ PHYSBAM = /opt/PhysBAM-2011
 # SOP_Main.C registers the operators and handles the DSO-specifics.
 SOURCES = \
     ./SIM_pbSolver.cpp \
-    ./SIM_pbGeometry.cpp \
     ./SIM_pbDefVisualize.cpp \
     ./SIM_pbWorldData.cpp \
 

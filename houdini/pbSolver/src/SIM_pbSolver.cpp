@@ -18,7 +18,7 @@ void
 initializeSIM(void *){
 	srand((unsigned)time(0));
 	IMPLEMENT_DATAFACTORY(SIM_pbSolver);
-	IMPLEMENT_DATAFACTORY(SIM_pbGeometry);
+	//IMPLEMENT_DATAFACTORY(SIM_pbGeometry);
 	IMPLEMENT_DATAFACTORY(SIM_pbDefVisualize);
     IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
     
@@ -112,39 +112,48 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 }
 bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
-	SIM_pbGeometry* defgeo;
+	SIM_GeometryCopy	*geometry_copy = 0;
+	SIM_Geometry		*geo = 0;
 	
-	defgeo = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Geometry"), SIM_pbGeometry);
-	if(defgeo){
+	geo = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_Geometry);
+	
+	if(geo!=0){
 		physbam_object* pb_object = worlddata->getObjects()->find(object->getObjectId())->second;
 		if(pb_object){
-			//std::cout << "\t readed points back for object " << object->getName() << " id: " << object->getObjectId() << std::endl;
 			int xid = ir.get_id(pb_object, "position");
 			int len = ir.get_vf3_array_length(pb_object, xid);
 			std::vector<data_exchange::vf3> x_array(len);
 			ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-			//for(size_t i=0; i<x_array.size(); i++)
-			//printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
-	
+			
 			/// Get the object's last state before this time step
-			SIM_GeometryCopy* geometry_copy(SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE));	
-			
-			GU_DetailHandleAutoWriteLock	gdl(geometry_copy->lockGeometry());
-			GU_Detail           			&gdp = *gdl.getGdp();
-			GEO_Point           			*geopt;
-			
-			std::cout << "pointer:" << pb_object << " readed for object: " << object->getObjectId() << std::endl;
-			HPI_TriMesh						*trimesh = defgeo->getMesh();
+			geometry_copy = SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE);	
 
-			std::map<GEO_Point*, int>::iterator iter;
-			for (iter = trimesh->points.begin(); iter != trimesh->points.end(); iter++) {
-				GEO_Point *pt = iter->first;
-				int			i = iter->second;
-				pt->setPos(x_array[i].data[0], x_array[i].data[1], x_array[i].data[2], 1);
+			if(geometry_copy){
+				GU_DetailHandleAutoWriteLock	gdl(geometry_copy->lockGeometry());
+				GU_Detail           			&gdp = *gdl.getGdp();
+				GEO_Point           			*geopt;
+				
+				std::cout << "pointer:" << pb_object << " readed for object: " << object->getObjectId() << std::endl;
+				HPI_TriMesh		*trimesh = NULL;
+				trimesh = worlddata->getTrimesh(object->getObjectId());
+				if(!trimesh){
+					std::cout << "Unable to get trimesh for object: " << object->getObjectId() << std::endl;
+					return false;
+				}
+	
+				std::map<GEO_Point*, int>::iterator iter;
+				for (iter = trimesh->points.begin(); iter != trimesh->points.end(); iter++) {
+					GEO_Point *pt = iter->first;
+					int			i = iter->second;
+					pt->setPos(x_array[i].data[0], x_array[i].data[1], x_array[i].data[2], 1);
+				}
+				geometry_copy->releaseGeometry(); /// Store the integrated simulation state in geometry_copy
+			}else{
+				std::cout << "Unable to get GeometryCopy for object: " << object->getObjectId() << " to update!" <<std::endl;
 			}
-			
-			geometry_copy->releaseGeometry(); /// Store the integrated simulation state in geometry_copy
 		}
+	}else{
+		std::cout << "Unable to get Geometry for object: " << object->getObjectId() << " to update!" <<std::endl;
 	}
 	return true;
 }

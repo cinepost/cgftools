@@ -2,6 +2,7 @@
 #define __SIM_pbWorldData_h__
 
 #include "wrapper_header.h"
+#include "HPI_trimesh.h"
 
 #include <iostream>
 #include <map>
@@ -31,6 +32,7 @@
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 #include <SIM/SIM_Geometry.h>
+#include <SIMZ/SIM_SopGeometry.h>
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIM/SIM_ForceGravity.h>
 #include <SIM/SIM_EmptyData.h>
@@ -41,15 +43,18 @@
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
+	std::map<int, HPI_TriMesh*>			*getTriMeshes();
 	std::map<int, physbam_object*>		*getObjects();
-	bool								objectExists(int id);
-	std::map<int, physbam_force*>	*getForces();
+	std::map<int, physbam_force*>		*getForces();
 	physbam_force						*getForce(int id);
+	HPI_TriMesh							*getTrimesh(int id);
+	bool								objectExists(int id);
 	bool								forceExists(int id);
+	bool								trimeshExists(int id);
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object);
 
-	physbam_simulation				*getSimulation();
+	physbam_simulation					*getSimulation();
 
 protected:
 	explicit 	SIM_PhysBAM_WorldData(const SIM_DataFactory *factory);
@@ -77,6 +82,7 @@ public:
 	physbam_simulation					*simulation;
 	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
+	std::map<int, HPI_TriMesh*>			*trimeshes;
 	int									*m_shareCount;
 };
 

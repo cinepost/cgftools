@@ -7,7 +7,6 @@
 #include <GEO/GEO_Point.h>
 
 struct HPI_TriMesh {
-	physbam_object*					sim_object;	
 	std::map<GEO_Point*, int>		points;								// point_to_index relation
 };
 
