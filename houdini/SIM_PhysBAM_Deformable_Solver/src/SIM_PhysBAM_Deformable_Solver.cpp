@@ -1,4 +1,4 @@
-#include "SIM_pbSolver.h"
+#include "SIM_PhysBAM_Deformable_Solver.h"
 
 #define		DEBUG
 #define 	PHYSLIB_FILENAME	"libPhysBAM_Wrapper.so"
@@ -11,15 +11,10 @@ struct physbam_force;
 
 bool   PB_LIB_READY	= false;	
 
-static PRM_Name		theSimeFileName("simfilename", "Simulation file");
-static PRM_Default	theSimeFileNameDefault(0, "$HIH/projects/simfile.$SF4.pbs");
-
 void
 initializeSIM(void *){
 	srand((unsigned)time(0));
-	IMPLEMENT_DATAFACTORY(SIM_pbSolver);
-	//IMPLEMENT_DATAFACTORY(SIM_pbGeometry);
-	IMPLEMENT_DATAFACTORY(SIM_pbDefVisualize);
+	IMPLEMENT_DATAFACTORY(SIM_PhysBAM_Deformable_Solver);
     IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
     
     logutils_indentation = 0;
@@ -43,17 +38,16 @@ initializeSIM(void *){
 	std::cout << "initializeSIM called." << std::endl;
 };
 	
-SIM_pbSolver::SIM_pbSolver(const SIM_DataFactory *factory) : BaseClass(factory), SIM_OptionsUser(this){
+SIM_PhysBAM_Deformable_Solver::SIM_PhysBAM_Deformable_Solver(const SIM_DataFactory *factory) : BaseClass(factory), SIM_OptionsUser(this){
 	
 };
 
-SIM_pbSolver::~SIM_pbSolver(){
+SIM_PhysBAM_Deformable_Solver::~SIM_PhysBAM_Deformable_Solver(){
 	
 };
 
-const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
+const SIM_DopDescription* SIM_PhysBAM_Deformable_Solver::getSolverDopDescription(){
     static PRM_Template  theTemplates[] = {
-        PRM_Template(PRM_FILE,         1, &theSimeFileName, &theSimeFileNameDefault),
         PRM_Template()
     };
 
@@ -61,9 +55,9 @@ const SIM_DopDescription* SIM_pbSolver::getSolverDopDescription(){
     return &theDopDescription;
 };	
 
-bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object){
+bool SIM_PhysBAM_Deformable_Solver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time){
 	LOG_INDENT;
-	LOG("SIM_pbSolver solveObjectsSubclass() called.");
+	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() called.");
 	LOG(object->getName() << " id: " << object->getObjectId());
 	
 	SIM_Data*	physbam_body = NULL;
@@ -71,7 +65,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
     
     if(physbam_body){
 		LOG("Creating PhysBAM object...");
-		physbam_object* pb_object = worlddata->addNewObject(object);
+		physbam_object* pb_object = worlddata->addNewObject(object, time);
 		
 		if(pb_object){
 			/// Add object related forces
@@ -110,7 +104,7 @@ bool SIM_pbSolver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object
 	}
 	return false;
 }
-bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
+bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
 	SIM_GeometryCopy	*geometry_copy = 0;
 	SIM_Geometry		*geo = 0;
@@ -159,17 +153,17 @@ bool SIM_pbSolver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 }
 	
 SIM_Solver::SIM_Result
-SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
+SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
 	LOG_INDENT;
-	LOG("SIM_pbSolver solveObjectsSubclass() called.");		
+	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() called.");		
 	bool new_world = false;
 	worlddata = SIM_DATA_GET(*this, "PhysBAM_World", SIM_PhysBAM_WorldData);
 	if(!worlddata){
-		LOG("SIM_pbSolver solveObjectsSubclass() creating new PhysBAM_World data.");
+		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() creating new PhysBAM_World data.");
 		new_world = true;		
 		worlddata = SIM_DATA_CREATE(*this, "PhysBAM_World", SIM_PhysBAM_WorldData, SIM_DATA_RETURN_EXISTING);
 		if(!worlddata){
-			LOG("SIM_pbSolver solveObjectsSubclass() unable to get PhysBAM_World data.");
+			LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable to get PhysBAM_World data.");
 			LOG_UNDENT;
 			return SIM_Solver::SIM_SOLVER_FAIL;
 		}
@@ -190,7 +184,7 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	
 	if (new_world) {
 		// setup basic forces and ground
-		LOG("SIM_pbSolver solveObjectsSubclass() setting up simple ground:");
+		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up simple ground:");
 		data_exchange::ground_plane gp;
 		gp.position = data_exchange::vf3(0,-10,0);
 		gp.normal = data_exchange::vf3(0,1,0);
@@ -199,10 +193,10 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	
 	/// Loop through new objects and add them into sim.
 	if (newobjects.entries() > 0) {
-		LOG("SIM_pbSolver solveObjectsSubclass() setting up new objects in sim:");	
+		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new objects in sim:");	
 		for( i = 0; i < newobjects.entries(); i++ ){	
-	    	if(!setupNewSimObject(sim, newobjects(i))){
-				LOG("SIM_pbSolver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
+	    	if(!setupNewSimObject(sim, newobjects(i), curr_time)){
+				LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
 				LOG_UNDENT;
 				return SIM_Solver::SIM_SOLVER_FAIL;
 			}
@@ -212,16 +206,16 @@ SIM_pbSolver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &object
 	}
 	
 	/// Run the simulation for the given time_step
-	LOG("SIM_pbSolver solveObjectsSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << timestep);	
+	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << timestep);	
 	ir.simulate_frame(sim, timestep);
-	LOG("SIM_pbSolver solveObjectsSubclass() simulated.");	
+	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() simulated.");	
 	
 	/// Update all the objects
 	if (objects.entries() > 0){
-		LOG("SIM_pbSolver solveObjectsSubclass() updating objects in sim:");
+		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating objects in sim:");
 		for( i = 0; i < objects.entries(); i++ ){ 
 	    	if(!updateSimObject(sim, objects(i))){
-				LOG("SIM_pbSolver solveObjectsSubclass() unable update object:" << objects(i)->getName());
+				LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable update object:" << objects(i)->getName());
 				LOG_UNDENT;
 				return SIM_Solver::SIM_SOLVER_FAIL;
 			}  

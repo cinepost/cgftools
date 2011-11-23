@@ -7,9 +7,9 @@ PHYSBAM = /opt/PhysBAM-2011
 # List of C++ source files to build.
 # SOP_Main.C registers the operators and handles the DSO-specifics.
 SOURCES = \
-    ./SIM_pbSolver.cpp \
-    ./SIM_pbDefVisualize.cpp \
-    ./SIM_pbWorldData.cpp \
+    ./SIM_PhysBAM_Deformable_Solver.cpp \
+    ./SIM_PhysBAM_WorldData.cpp \
+    #./SIM_pbDefVisualize.cpp
 
 # Icons for custom node operators.
 ICONS = \
@@ -35,7 +35,7 @@ LIBS = \
 	#-lboost_serialization-gcc44-mt-1_37
 
 # Set the plugin library name.
-DSONAME = $(INSTDIR)/dso/SIM_pbSolver.so
+DSONAME = $(INSTDIR)/dso/SIM_PhysBAM_Deformable_Solver.so
 
 CXXFLAGS = -g
 

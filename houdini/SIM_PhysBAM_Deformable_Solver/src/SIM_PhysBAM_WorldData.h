@@ -2,7 +2,7 @@
 #define __SIM_pbWorldData_h__
 
 #include "wrapper_header.h"
-#include "HPI_trimesh.h"
+#include "HPI_Trimesh.h"
 
 #include <iostream>
 #include <map>
@@ -36,9 +36,12 @@
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIM/SIM_ForceGravity.h>
 #include <SIM/SIM_EmptyData.h>
-
-#include "SIM_pbDefGeometry.h"
-#include "SIM_PhysBAM_Body.h"
+#include <SIM/SIM_Constraint.h>
+#include <SIM/SIM_ConstraintIterator.h>
+#include <SIM/SIM_DataFilter.h>
+#include <SIM/SIM_ConAnchorSpatial.h>
+#include <SIM/SIM_ConAnchorRotational.h>
+#include <SIM/SIM_ConRel.h>
 
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
@@ -52,7 +55,7 @@ public:
 	bool								forceExists(int id);
 	bool								trimeshExists(int id);
 	physbam_force						*addNewForce(const SIM_Data *force);
-	physbam_object						*addNewObject(SIM_Object *object);
+	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);
 
 	physbam_simulation					*getSimulation();
 

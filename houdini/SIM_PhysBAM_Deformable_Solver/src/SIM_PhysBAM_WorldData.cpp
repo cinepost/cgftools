@@ -1,4 +1,4 @@
-#include "SIM_pbWorldData.h"
+#include "SIM_PhysBAM_WorldData.h"
 
 extern interface_routines ir;
 
@@ -205,7 +205,7 @@ SIM_PhysBAM_WorldData::addNewForce(const SIM_Data *force){
 }
 
 physbam_object*
-SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
+SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::addNewObject(const SIM_Object *object) called.");
 	
@@ -219,11 +219,6 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 		LOG("This object has no geometry. Skipping !!!");
 		LOG_UNDENT;
     }else{
-
-		//if( !SIM_DATA_GET(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy) )
-        //{
-        //    SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, 0);
-		//}
 		
 		SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
 		
@@ -244,11 +239,10 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			if(data->hasOption("mass"))mass = data->getOptionF("mass");
 			if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
 			if(data->hasOption("damping"))damping = data->getOptionF("damping");
+			if(data->hasOption("approx_number_of_cells"))approx_number_cells = data->getOptionI("approx_number_of_cells");
 			if(data->hasOption("velocity"))velocity = data->getOptionV3("velocity");
 			if(data->hasOption("angular_velocity"))angular_velocity = data->getOptionV3("angular_velocity");
 			if(data->hasOption("angular_center"))angular_center = data->getOptionV3("angular_center");	
-		}else{
-			
 		}
 		
 		const GU_Detail*				const gdp(geometry->getGeometry().readLock());
@@ -387,6 +381,46 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object){
 			trimeshes->insert( std::pair<int, HPI_TriMesh*>(object->getObjectId(), trimesh));
 			objects->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
 			
+			/// Now create constraints
+			SIM_ConstraintIterator::initConstraints(*object, time);
+			SIM_DataFilterByType 	anchorFilter("SIM_ConAnchor");
+			SIM_ConstraintIterator 	conit(*object, 0, &anchorFilter, &anchorFilter, time);
+
+			for (conit.rewind(); !conit.atEnd(); conit.advance())
+			{
+				SIM_ConRel                      *conrel;
+				const SIM_ConAnchorSpatial      *spanchor, *goalspanchor;
+				const SIM_ConAnchorRotational  	*rotanchor, *goalrotanchor;
+				
+				conrel = conit.getConRel();
+				spanchor = SIM_DATA_CASTCONST(conit.getCurrentAnchor(), SIM_ConAnchorSpatial);
+				goalspanchor = SIM_DATA_CASTCONST(conit.getGoalAnchor(), SIM_ConAnchorSpatial);
+				if( spanchor && goalspanchor )
+				{
+					// Handle spatial constraints.
+					LOG("Constraint spatial." << std::endl);
+				}
+				
+				rotanchor = SIM_DATA_CASTCONST(conit.getCurrentAnchor(), SIM_ConAnchorRotational);
+				goalrotanchor = SIM_DATA_CASTCONST(conit.getGoalAnchor(), SIM_ConAnchorRotational);
+				if( rotanchor && goalrotanchor )
+				{
+					// Handle Rotational constraints.
+					LOG("Constraint rotational." << std::endl);
+				}
+			}
+
+			/*
+			SIM_DataFilterByType 	anchorFilter("SIM_Constraint");
+			SIM_ConstraintIterator 	conit(*object, 0, &anchorFilter, &anchorFilter, time);
+            const SIM_Constraint	*constraint = 0;
+            
+            for (conit.rewind(); !conit.atEnd(); conit.advance())
+			{
+				constraint = conit.getConstraint();
+				LOG("Constraint: " << constraint->getDataType() << std::endl);
+			}*/                
+                            
 			/// Create volume force for deformable body
 			LOG("Creating PhysBAM volumetric force for object: " << object->getObjectId());
 			data_exchange::volumetric_force vf;

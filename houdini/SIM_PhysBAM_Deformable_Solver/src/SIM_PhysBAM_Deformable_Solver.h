@@ -1,5 +1,5 @@
-#ifndef __SIM_pbSolver_h__
-#define __SIM_pbSolver_h__
+#ifndef __SIM_PhysBAM_Deformable_Solver_h__
+#define __SIM_PhysBAM_Deformable_Solver_h__
 
 #include "wrapper_header.h"
 interface_routines ir;
@@ -41,7 +41,6 @@ interface_routines ir;
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 #include <SIM/SIM_Solver.h>
-#include <SIM/SIM_ConstraintIterator.h>
 #include <RBD/RBD_State.h>
 #include <UT/UT_String.h>
 #include <UT/UT_HashTable.h>
@@ -54,25 +53,23 @@ interface_routines ir;
 #include <UT/UT_WorkBuffer.h>
 #include <UT/UT_Interrupt.h>
 
-#include "SIM_pbDefGeometry.h"
-#include "SIM_pbDefVisualize.h"
-#include "SIM_pbWorldData.h"
+#include "SIM_PhysBAM_WorldData.h"
 
 #include "logtools.h"
 
-class SIM_pbSolver : public SIM_Solver, public SIM_OptionsUser
+class SIM_PhysBAM_Deformable_Solver : public SIM_Solver, public SIM_OptionsUser
 {	
 public:
 	//GETSET_DATA_FUNCS_F("yourownaccuracy", MyOwnAccuracy);
 
 protected:
-    explicit				SIM_pbSolver(const SIM_DataFactory *factory);
-    virtual					~SIM_pbSolver();
+    explicit				SIM_PhysBAM_Deformable_Solver(const SIM_DataFactory *factory);
+    virtual					~SIM_PhysBAM_Deformable_Solver();
     
 	/// This implements our own solver step
 	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
 	
-	bool					setupNewSimObject(physbam_simulation* sim, SIM_Object* object);
+	bool					setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time);
 	bool					updateSimObject(physbam_simulation* sim, SIM_Object* object);		
 		
 private:
@@ -80,7 +77,7 @@ private:
 	static const SIM_DopDescription* getSolverDopDescription();
 	
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_pbSolver, SIM_Solver, "PhysBAM_Deformable_Solver", getSolverDopDescription());	
+	DECLARE_DATAFACTORY(SIM_PhysBAM_Deformable_Solver, SIM_Solver, "PhysBAM_Deformable_Solver", getSolverDopDescription());	
 };
 
 #endif

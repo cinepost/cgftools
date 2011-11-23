@@ -1,8 +1,6 @@
 #ifndef __SIM_pbDefVisualize_h__
 #define __SIM_pbDefVisualize_h__
 
-#include "SIM_pbDefGeometry.h"
-
 #include <iostream>
 
 #include <UT/UT_HashTable.h>

@@ -1,5 +1,5 @@
-#ifndef __SIM_pbSolver_h__
-#define __SIM_pbSolver_h__
+#ifndef __SIM_PhysBAM_Deformable_Solver_h__
+#define __SIM_PhysBAM_Deformable_Solver_h__
 
 #include "HPI_trimesh.h"
 
