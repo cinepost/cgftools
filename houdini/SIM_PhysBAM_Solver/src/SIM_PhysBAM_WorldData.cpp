@@ -8,7 +8,7 @@ extern interface_routines ir;
 
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
 	simulation(NULL),
-	objects(0),
+	objects(0), fluid_objects(0),
 	forces(0),
 	trimeshes(0),
 	m_shareCount(0){
@@ -39,6 +39,11 @@ SIM_PhysBAM_WorldData::getForce(int id){
 	return forces->find(id)->second;
 }
 
+HPI_Fluid_Object*
+SIM_PhysBAM_WorldData::getFluidObject(int id){
+	return fluid_objects->find(id)->second;
+}
+
 std::map<int, physbam_force*>*
 SIM_PhysBAM_WorldData::getForces(void){
 	return forces;
@@ -57,6 +62,11 @@ SIM_PhysBAM_WorldData::forceExists(int id){
 bool
 SIM_PhysBAM_WorldData::trimeshExists(int id){
 	return trimeshes->find( id ) != trimeshes->end();
+}
+
+bool
+SIM_PhysBAM_WorldData::fluidObjectExists(int id){
+	return fluid_objects->find( id ) != fluid_objects->end();
 }
 
 physbam_simulation* 
@@ -100,6 +110,7 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	clear();
 	simulation		= NULL;
 	objects			= new std::map<int, physbam_object*>();
+	fluid_objects	= new std::map<int, HPI_Fluid_Object*>();
 	forces			= new std::map<int, physbam_force*>();
 	trimeshes		= new std::map<int, HPI_TriMesh*>();
 	m_shareCount	= new int(1);
@@ -115,7 +126,8 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 	if( world ){
 		clear();
 		simulation		= world->simulation;	
-		objects 		= world->objects;	
+		objects 		= world->objects;
+		fluid_objects 	= world->fluid_objects;	
 		forces 			= world->forces;
 		trimeshes 		= world->trimeshes;						
 		m_shareCount 	= world->m_shareCount;
@@ -140,6 +152,11 @@ void SIM_PhysBAM_WorldData::clear(){
 				delete it->second;
 			}
 			objects->clear();
+			
+			for ( typename std::map<int, HPI_Fluid_Object*>::iterator it = fluid_objects->begin(); it != fluid_objects->end(); ++it ) {
+				delete it->second;
+			}
+			fluid_objects->clear();
 			
 			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ) {
 				delete it->second;
@@ -434,4 +451,28 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
 	LOG("Done");
 	LOG_UNDENT;
 	return pb_object;	
+}
+
+physbam_object*
+SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewFluidObject(const SIM_Object *object) called.");
+	
+	UT_Vector3		size;
+	UT_Vector3		divisions;
+	SIM_SopScalarField* 	surface;
+	
+	surface = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
+	divisions = surface->getDivisions();
+	size = surface->getSize();
+	
+	HPI_Fluid_Object	*fluid_object = new HPI_Fluid_Object(); /// just a test
+	fluid_object->setSize(size.x(), size.y(), size.z());
+	fluid_object->setDivisions(divisions.x(), divisions.y(), divisions.z());
+
+	fluid_objects->insert( std::pair<int, HPI_Fluid_Object*>(object->getObjectId(), fluid_object));
+	
+	LOG("Done");
+	LOG_UNDENT;
+	return fluid_object->getPhysbamObject();	
 }

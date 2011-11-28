@@ -1,42 +1,12 @@
 #include "SIM_PhysBAM_Deformable_Solver.h"
 
-#define		DEBUG
-#define 	PHYSLIB_FILENAME	"libPhysBAM_Wrapper.so"
-
 extern interface_routines ir;
 
 struct physbam_simulation;
 struct physbam_object;
 struct physbam_force;
 
-bool   PB_LIB_READY	= false;	
-
-void
-initializeSIM(void *){
-	srand((unsigned)time(0));
-	IMPLEMENT_DATAFACTORY(SIM_PhysBAM_Deformable_Solver);
-    IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
-    
-    logutils_indentation = 0;
-    void* handle = dlopen(PHYSLIB_FILENAME, RTLD_LAZY);
-    if(!handle){
-        const char *p = dlerror();
-        printf("dlopen error %s. Will bypass actual simulation !!!\n", p);
-    }else{
-		if(!ir.init(handle))
-		{
-			printf("Failed to initialize interface routines.\n");
-			exit(1);
-		}
-		
-		PB_LIB_READY = true;
-		
-		ir.physbam_init();
-		ir.set_string(0, ir.get_id(0, "playback_log"), "main.log");
-		ir.set_int(0, ir.get_id(0, "enable_cout_logging"), 0);
-	}
-	std::cout << "initializeSIM called." << std::endl;
-};
+extern	bool	PB_LIB_READY;	
 	
 SIM_PhysBAM_Deformable_Solver::SIM_PhysBAM_Deformable_Solver(const SIM_DataFactory *factory) : BaseClass(factory), SIM_OptionsUser(this){
 	
@@ -51,7 +21,7 @@ const SIM_DopDescription* SIM_PhysBAM_Deformable_Solver::getSolverDopDescription
         PRM_Template()
     };
 
-    static SIM_DopDescription    theDopDescription(true, "pbm_def_solver", "PhysBAM Deformable Solver", SIM_SOLVER_DATANAME, classname(), theTemplates);
+    static SIM_DopDescription    theDopDescription(true, "pbm_deformable_solver", "PhysBAM Deformable Solver", SIM_SOLVER_DATANAME, classname(), theTemplates);
     return &theDopDescription;
 };	
 

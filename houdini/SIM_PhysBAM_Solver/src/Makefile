@@ -7,9 +7,11 @@ PHYSBAM = /opt/PhysBAM-2011
 # List of C++ source files to build.
 # SOP_Main.C registers the operators and handles the DSO-specifics.
 SOURCES = \
+	./SIM_PhysBAM_Commons.cpp \
     ./SIM_PhysBAM_Deformable_Solver.cpp \
+    ./SIM_PhysBAM_Fluid_Solver.cpp \
     ./SIM_PhysBAM_WorldData.cpp \
-    #./SIM_pbDefVisualize.cpp
+    ./HPI_Fluid_Object.cpp
 
 # Icons for custom node operators.
 ICONS = \

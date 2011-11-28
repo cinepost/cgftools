@@ -3,6 +3,7 @@
 
 #include "wrapper_header.h"
 #include "HPI_Trimesh.h"
+#include "HPI_Fluid_Object.h"
 
 #include <iostream>
 #include <map>
@@ -42,6 +43,8 @@
 #include <SIM/SIM_ConAnchorSpatial.h>
 #include <SIM/SIM_ConAnchorRotational.h>
 #include <SIM/SIM_ConRel.h>
+#include <SIM/SIM_ScalarField.h>
+#include <SIMZ/SIM_SopScalarField.h>
 
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
@@ -51,11 +54,14 @@ public:
 	std::map<int, physbam_force*>		*getForces();
 	physbam_force						*getForce(int id);
 	HPI_TriMesh							*getTrimesh(int id);
+	HPI_Fluid_Object					*getFluidObject(int id);
 	bool								objectExists(int id);
 	bool								forceExists(int id);
 	bool								trimeshExists(int id);
+	bool								fluidObjectExists(int id);
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);
+	physbam_object						*addNewFluidObject(SIM_Object *object, SIM_Time time);
 
 	physbam_simulation					*getSimulation();
 
@@ -86,6 +92,7 @@ public:
 	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
 	std::map<int, HPI_TriMesh*>			*trimeshes;
+	std::map<int, HPI_Fluid_Object*>	*fluid_objects;
 	int									*m_shareCount;
 };
 

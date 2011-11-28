@@ -1,5 +1,5 @@
-#ifndef __SIM_PhysBAM_Deformable_Solver_h__
-#define __SIM_PhysBAM_Deformable_Solver_h__
+#ifndef __SIM_PhysBAM_Fluid_Solver_h__
+#define __SIM_PhysBAM_Fluid_Solver_h__
 
 #include "wrapper_header.h"
 extern interface_routines ir;
@@ -56,14 +56,11 @@ extern interface_routines ir;
 
 #include "logtools.h"
 
-class SIM_PhysBAM_Deformable_Solver : public SIM_Solver, public SIM_OptionsUser
+class SIM_PhysBAM_Fluid_Solver : public SIM_Solver, public SIM_OptionsUser
 {	
-public:
-	//GETSET_DATA_FUNCS_F("yourownaccuracy", MyOwnAccuracy);
-
 protected:
-    explicit				SIM_PhysBAM_Deformable_Solver(const SIM_DataFactory *factory);
-    virtual					~SIM_PhysBAM_Deformable_Solver();
+    explicit				SIM_PhysBAM_Fluid_Solver(const SIM_DataFactory *factory);
+    virtual					~SIM_PhysBAM_Fluid_Solver();
     
 	/// This implements our own solver step
 	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
@@ -76,7 +73,7 @@ private:
 	static const SIM_DopDescription* getSolverDopDescription();
 	
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_PhysBAM_Deformable_Solver, SIM_Solver, "PhysBAM_Deformable_Solver", getSolverDopDescription());	
+	DECLARE_DATAFACTORY(SIM_PhysBAM_Fluid_Solver, SIM_Solver, "PhysBAM_Fluid_Solver", getSolverDopDescription());	
 };
 
 #endif
