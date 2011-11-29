@@ -7,7 +7,7 @@ extern interface_routines ir;
 #include "logtools.h"
 
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
-	simulation(NULL),
+	simulation(NULL), simulations(0),
 	objects(0), fluid_objects(0),
 	forces(0),
 	trimeshes(0),
@@ -69,6 +69,11 @@ SIM_PhysBAM_WorldData::fluidObjectExists(int id){
 	return fluid_objects->find( id ) != fluid_objects->end();
 }
 
+bool
+SIM_PhysBAM_WorldData::simulationExists(unsigned char type){
+	return simulations->find( type ) != simulations->end();
+}
+
 physbam_simulation* 
 SIM_PhysBAM_WorldData::getSimulation(void){
 	LOG_INDENT;
@@ -86,6 +91,50 @@ SIM_PhysBAM_WorldData::getSimulation(void){
 	LOG_UNDENT; 	
 	return simulation;
 };
+
+physbam_simulation* 
+SIM_PhysBAM_WorldData::getSimulation(int uid, unsigned char type){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::getSimulation(unsigned char type) called.");
+	physbam_simulation* sim = NULL;
+	
+	if(simulationExists(uid)){
+		sim = simulations->find(uid)->second;
+		LOG("SIM_PhysBAM_WorldData::getSimulation(unsigned char type) using existing simulation instance: " << sim);
+	}else{
+		LOG("SIM_PhysBAM_WorldData::getSimulation() creating new simulation instace.");
+
+		switch(type)
+		{
+		case SOLID_TYPE:
+			sim	= ir.create_simulation("solids");
+			ir.set_string(sim, ir.get_id(sim, "output_directory"), "solid-output");		
+			break;
+		case SMOKE_TYPE:
+			sim = ir.create_simulation("smoke");
+			ir.set_string(sim, ir.get_id(sim, "output_directory"), "smoke-output");
+			ir.set_int(sim, ir.get_id(sim, "use_mgpcg"), 1);		
+			break;
+		case WATER_TYPE:
+			sim = ir.create_simulation("water");
+			ir.set_string(sim, ir.get_id(sim, "output_directory"), "water-output");
+			ir.set_int(sim, ir.get_id(sim, "use_mgpcg"), 1);		
+			break;
+		default:
+			break;
+		}	
+			
+		if(sim){
+			LOG("SIM_PhysBAM_WorldData::getSimulation(unsigned char type) created instance: "  << sim);
+			ir.set_string(sim, ir.get_id(sim, "data_directory"), "/opt/PhysBAM-2011/Public_Data");
+			simulations->insert( std::pair<int, physbam_simulation*>(uid, sim));	
+		}	
+	}
+	
+	LOG("Done");
+	LOG_UNDENT; 	
+	return sim;		
+}
 
 bool SIM_PhysBAM_WorldData::getCanBeSavedToDiskSubclass() const{
 	return false;
@@ -109,6 +158,7 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	//LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
 	clear();
 	simulation		= NULL;
+	simulations		= new std::map<int, physbam_simulation*>();
 	objects			= new std::map<int, physbam_object*>();
 	fluid_objects	= new std::map<int, HPI_Fluid_Object*>();
 	forces			= new std::map<int, physbam_force*>();
@@ -125,7 +175,8 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 	world = SIM_DATA_CASTCONST(src, SIM_PhysBAM_WorldData);
 	if( world ){
 		clear();
-		simulation		= world->simulation;	
+		simulation		= world->simulation;
+		simulations		= world->simulations;	
 		objects 		= world->objects;
 		fluid_objects 	= world->fluid_objects;	
 		forces 			= world->forces;
@@ -148,30 +199,17 @@ void SIM_PhysBAM_WorldData::clear(){
 				LOG("SIM_PhysBAM_WorldData::clear() destroying sim: " << simulation);
 				ir.destroy_simulation(simulation);
 			}
-			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ) {
-				delete it->second;
-			}
-			objects->clear();
-			
-			for ( typename std::map<int, HPI_Fluid_Object*>::iterator it = fluid_objects->begin(); it != fluid_objects->end(); ++it ) {
-				delete it->second;
-			}
-			fluid_objects->clear();
-			
-			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ) {
-				delete it->second;
-			}
-			forces->clear();
-
-			for ( typename std::map<int, HPI_TriMesh*>::iterator it = trimeshes->begin(); it != trimeshes->end(); ++it ) {
-				delete it->second;
-			}
-			trimeshes->clear();
+			for ( typename std::map<int, physbam_simulation*>::iterator it = simulations->begin(); it != simulations->end(); ++it ){delete it->second; };simulations->clear();
+			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second; };objects->clear();
+			for ( typename std::map<int, HPI_Fluid_Object*>::iterator it = fluid_objects->begin(); it != fluid_objects->end(); ++it ){delete it->second;};fluid_objects->clear();
+			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
+			for ( typename std::map<int, HPI_TriMesh*>::iterator it = trimeshes->begin(); it != trimeshes->end(); ++it ){delete it->second;};trimeshes->clear();
 
 			delete 	m_shareCount;
 		}
 	}
 	simulation		= NULL;
+	simulations		= NULL;
 	objects			= NULL;
 	forces			= NULL;
 	trimeshes		= NULL;							
@@ -453,26 +491,98 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
 	return pb_object;	
 }
 
-physbam_object*
+bool
 SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::addNewFluidObject(const SIM_Object *object) called.");
 	
-	UT_Vector3		size;
-	UT_Vector3		divisions;
-	SIM_SopScalarField* 	surface;
-	
+	UT_Vector3			size;
+	UT_Vector3			divisions;
+	SIM_SopScalarField* primary = NULL;
+	SIM_SopScalarField* density = NULL;
+	SIM_SopScalarField* surface = NULL;
+	physbam_simulation* sim = NULL;
+	HPI_Fluid_Object	*fluid_object = new HPI_Fluid_Object();
+	density = SIM_DATA_CAST(object->getNamedSubData("density"), SIM_SopScalarField);
 	surface = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
-	divisions = surface->getDivisions();
-	size = surface->getSize();
 	
-	HPI_Fluid_Object	*fluid_object = new HPI_Fluid_Object(); /// just a test
+	if(density){
+		fluid_object->setFluidType(SMOKE_TYPE);
+		sim = getSimulation(object->getObjectId(), SMOKE_TYPE);
+		primary = density;
+	}else if(surface){
+		fluid_object->setFluidType(WATER_TYPE);
+		sim = getSimulation(object->getObjectId(), WATER_TYPE);
+		primary = surface;
+	}else{
+		LOG("Unknown fluid object type !!! Skipping ...");
+		LOG_UNDENT;	
+		return false;
+	}
+	
+	divisions = primary->getDivisions();
+	size = primary->getSize();
+	
 	fluid_object->setSize(size.x(), size.y(), size.z());
 	fluid_object->setDivisions(divisions.x(), divisions.y(), divisions.z());
 
 	fluid_objects->insert( std::pair<int, HPI_Fluid_Object*>(object->getObjectId(), fluid_object));
 	
+	data_exchange::fluid_domain fd;
+    fd.position.push_back(data_exchange::vf3(0,0,0));
+    fd.position.push_back(data_exchange::vf3(0,0,1));
+    fd.position.push_back(data_exchange::vf3(0,1,0));
+    fd.position.push_back(data_exchange::vf3(0,1,1));
+    fd.position.push_back(data_exchange::vf3(1,0,0));
+    fd.position.push_back(data_exchange::vf3(1,0,1));
+    fd.position.push_back(data_exchange::vf3(1,1,0));
+    fd.position.push_back(data_exchange::vf3(1,1,1));
+    
+    fd.mesh.insert_polygon(data_exchange::vi4(7,6,2,3));
+    fd.mesh.insert_polygon(data_exchange::vi4(2,6,4,0));
+    fd.mesh.insert_polygon(data_exchange::vi4(1,0,4,5));
+    fd.mesh.insert_polygon(data_exchange::vi4(0,1,3,2));
+    fd.mesh.insert_polygon(data_exchange::vi4(3,1,5,7));
+    fd.mesh.insert_polygon(data_exchange::vi4(4,6,7,5));
+
+    fd.is_wall.push_back(0);
+    fd.is_wall.push_back(1);
+    fd.is_wall.push_back(1);
+    fd.is_wall.push_back(1);
+    fd.is_wall.push_back(1);
+    fd.is_wall.push_back(1);
+
+    fd.resolution=60;
+    ir.add_object(sim, &fd);
+    
+    data_exchange::fluid_grid_data grid_data;
+    ir.get_fluid_grid_data(sim, grid_data);    
+    
+    printf("grid_data %g %g %g   %g   %i %i %i\n",
+        grid_data.corner_location.data[0], grid_data.corner_location.data[1], grid_data.corner_location.data[2],
+        grid_data.dx, grid_data.dimensions.data[0], grid_data.dimensions.data[1], grid_data.dimensions.data[2]);    
+    
+    std::vector<data_exchange::vi3> source_cells;
+    std::vector<data_exchange::vf3> source_velocities;
+    std::vector<float> source_densities;
+
+
+	SIM_RawField *field = primary->getField();
+	for(int i=0;i<=divisions.x();i++){
+		for(int j=0;j<=divisions.y();j++){
+			for(int k=0;k<=divisions.z();k++){
+				source_cells.push_back(data_exchange::vi3(i,j,k));
+				source_velocities.push_back(data_exchange::vf3(0,.5,0));
+				source_densities.push_back(field->getCellValue(i,j,k));
+			}
+		} 
+	}
+	
+    ir.set_vi3_array(sim, ir.get_id(sim, "source_cells"), &source_cells[0], source_cells.size(), 0);
+    ir.set_vf3_array(sim, ir.get_id(sim, "source_velocities"), &source_velocities[0], source_velocities.size(), 0);
+    ir.set_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);    
+	
 	LOG("Done");
-	LOG_UNDENT;
-	return fluid_object->getPhysbamObject();	
+	LOG_UNDENT;	
+	return true;	
 }

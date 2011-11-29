@@ -1,7 +1,7 @@
 #ifndef __SIM_pbWorldData_h__
 #define __SIM_pbWorldData_h__
 
-#include "wrapper_header.h"
+#include "SIM_PhysBAM_Commons.h"
 #include "HPI_Trimesh.h"
 #include "HPI_Fluid_Object.h"
 
@@ -59,11 +59,13 @@ public:
 	bool								forceExists(int id);
 	bool								trimeshExists(int id);
 	bool								fluidObjectExists(int id);
+	bool								simulationExists(unsigned char type);
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);
-	physbam_object						*addNewFluidObject(SIM_Object *object, SIM_Time time);
+	bool								addNewFluidObject(SIM_Object *object, SIM_Time time);
 
 	physbam_simulation					*getSimulation();
+	physbam_simulation					*getSimulation(int uid, unsigned char type);
 
 protected:
 	explicit 	SIM_PhysBAM_WorldData(const SIM_DataFactory *factory);
@@ -89,6 +91,7 @@ private:
 
 public:
 	physbam_simulation					*simulation;
+	std::map<int, physbam_simulation*>	*simulations;
 	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
 	std::map<int, HPI_TriMesh*>			*trimeshes;

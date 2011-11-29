@@ -3,6 +3,7 @@
 #include "SIM_PhysBAM_Fluid_Solver.h"
 #include "SIM_PhysBAM_WorldData.h"
 
+#include "SIM_PhysBAM_Commons.h"
 #include "wrapper_header.h"
 interface_routines ir;
 

@@ -25,7 +25,7 @@ const SIM_DopDescription* SIM_PhysBAM_Fluid_Solver::getSolverDopDescription(){
     return &theDopDescription;
 };	
 
-bool SIM_PhysBAM_Fluid_Solver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time){
+bool SIM_PhysBAM_Fluid_Solver::setupNewSimObject(SIM_Object* object, SIM_Time time){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() called.");
 	LOG(object->getName() << " id: " << object->getObjectId());
@@ -36,21 +36,50 @@ bool SIM_PhysBAM_Fluid_Solver::setupNewSimObject(physbam_simulation* sim, SIM_Ob
 	LOG_UNDENT;
 	return true;
 }
-bool SIM_PhysBAM_Fluid_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
+bool SIM_PhysBAM_Fluid_Solver::updateSimObject(SIM_Object* object){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_Fluid_Solver updateSimObject() called.");
 	LOG(object->getName() << " id: " << object->getObjectId());
 
-	SIM_SopScalarField* surface;
-	UT_Vector3			divisions;
-	surface = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
-	divisions = surface->getDivisions();
+	unsigned char type = 0;
+	physbam_simulation* sim = NULL;
+	SIM_SopScalarField* primary = NULL;
+	SIM_SopScalarField* density = NULL;
+	SIM_SopScalarField* surface = NULL;
 	
-	SIM_RawField *field = surface->getField();
-	for(int x = 0; x < divisions.x(); x++){
-		for(int y = 0; y < divisions.y(); y++){
-			for(int z = 0; z < divisions.z(); z++){
-				field->setCellValue(x, y, z, -1.0f);
+	density = SIM_DATA_CAST(object->getNamedSubData("density"), SIM_SopScalarField);
+	surface = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
+	
+	UT_Vector3	divisions;
+	
+	if(density){
+		type = SMOKE_TYPE;
+		sim = worlddata->getSimulation(object->getObjectId(), SMOKE_TYPE);
+		primary = density;
+	}else if(surface){
+		type = WATER_TYPE;
+		sim = worlddata->getSimulation(object->getObjectId(), WATER_TYPE);
+		primary = surface;
+	}else{
+		LOG("SIM_PhysBAM_Fluid_Solver updateSimObject() Unknown fluid object type !!! Skipping ...");
+		LOG_UNDENT;	
+		return false;
+	}
+	
+	divisions = primary->getDivisions();
+	
+	std::vector<float> source_densities (60*60*60, 0.0f);
+	ir.get_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);
+	
+	int w = divisions.x();
+	int h = divisions.y();
+	int d = divisions.z();
+	
+	SIM_RawField *field = primary->getField();
+	for(int x = 0; x < w; x++){
+		for(int y = 0; y < h; y++){
+			for(int z = 0; z < d; z++){
+				field->setCellValue(x, y, z, source_densities[x + w*y + h*w*z]);
 			}
 		}
 	}
@@ -61,52 +90,45 @@ bool SIM_PhysBAM_Fluid_Solver::updateSimObject(physbam_simulation* sim, SIM_Obje
 }
 	
 SIM_Solver::SIM_Result
-SIM_PhysBAM_Fluid_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep){
+SIM_PhysBAM_Fluid_Solver::solveSingleObjectSubclass(SIM_Engine& engine, SIM_Object& object, SIM_ObjectArray& feedback_to_objects, const SIM_Time& time_step, bool object_is_new){
 	LOG_INDENT;
-	LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() called.");		
-	bool new_world = false;
-	worlddata = SIM_DATA_GET(*this, "PhysBAM_World", SIM_PhysBAM_WorldData);
+	LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() called.");	
+	physbam_simulation* 	sim = NULL;
+	const SIM_Time 	curr_time = engine.getSimulationTime();
+
+	LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() creator: " << object.getCreatorNode()->getNetName());	
+
+	worlddata = SIM_DATA_CREATE(*this, "PhysBAM_World", SIM_PhysBAM_WorldData, SIM_DATA_RETURN_EXISTING);
 	if(!worlddata){
-		LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() creating new PhysBAM_World data.");
-		new_world = true;		
-		worlddata = SIM_DATA_CREATE(*this, "PhysBAM_World", SIM_PhysBAM_WorldData, SIM_DATA_RETURN_EXISTING);
-		if(!worlddata){
-			LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() unable to get PhysBAM_World data.");
+		LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() unable to get PhysBAM_World data.");
+		LOG_UNDENT;
+		return SIM_Solver::SIM_SOLVER_FAIL;
+	}
+
+	if(object_is_new){
+		/// Add new fluid object into simulation
+		LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() setting up new object in sim: " << sim);
+		if(!setupNewSimObject(&object, curr_time)){
+			LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() unable set up new object:" << object.getName());
 			LOG_UNDENT;
 			return SIM_Solver::SIM_SOLVER_FAIL;
 		}
-	}
-	
-	const SIM_Time 			curr_time = engine.getSimulationTime();
-	
-	/// Loop through new objects and add them into sim.
-	if (newobjects.entries() > 0) {
-		LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() setting up new objects in sim:");	
-		for( int i = 0; i < newobjects.entries(); i++ ){	
-	    	if(!setupNewSimObject(0 , newobjects(i), curr_time)){
-				LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
-				LOG_UNDENT;
-				return SIM_Solver::SIM_SOLVER_FAIL;
-			}
-		}
-		/// exit with success. we don't want to run actual simulation here
-		return SIM_Solver::SIM_SOLVER_SUCCESS;	
-	}
-		
-
-	/// Update all the objects
-	if (objects.entries() > 0){
-		LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() updating objects in sim:");
-		for( int i = 0; i < objects.entries(); i++ ){ 
-	    	if(!updateSimObject(0, objects(i))){
-				LOG("SIM_PhysBAM_Fluid_Solver solveObjectsSubclass() unable update object:" << objects(i)->getName());
-				LOG_UNDENT;
-				return SIM_Solver::SIM_SOLVER_FAIL;
-			}  
-		}	
+	}else{			
+		/// Run the simulation for the given time_step
+		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << time_step);	
+		sim = worlddata->getSimulation(object.getObjectId(), SMOKE_TYPE);
+		ir.simulate_frame(sim, 0.001);
+		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() simulated.");		
+					
+		LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() updating objects in sim: " << sim);
+		if(!updateSimObject(&object)){
+			LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() unable update object:" << object.getName());
+			LOG_UNDENT;
+			return SIM_Solver::SIM_SOLVER_FAIL;
+		}  
 	}
 
 	LOG_UNDENT;	
 	LOG("Done");		
 	return SIM_Solver::SIM_SOLVER_SUCCESS;
-}	
+}		

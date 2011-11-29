@@ -1,7 +1,7 @@
 #ifndef __SIM_PhysBAM_Fluid_Solver_h__
 #define __SIM_PhysBAM_Fluid_Solver_h__
 
-#include "wrapper_header.h"
+#include "SIM_PhysBAM_Commons.h"
 extern interface_routines ir;
 
 #include <fstream>
@@ -41,6 +41,7 @@ extern interface_routines ir;
 #include <SIM/SIM_Guide.h>
 #include <SIM/SIM_GuideShared.h>
 #include <SIM/SIM_Solver.h>
+#include <SIM/SIM_SingleSolver.h>
 #include <RBD/RBD_State.h>
 #include <UT/UT_String.h>
 #include <UT/UT_HashTable.h>
@@ -56,24 +57,24 @@ extern interface_routines ir;
 
 #include "logtools.h"
 
-class SIM_PhysBAM_Fluid_Solver : public SIM_Solver, public SIM_OptionsUser
+class SIM_PhysBAM_Fluid_Solver : public SIM_SingleSolver, public SIM_OptionsUser
 {	
 protected:
     explicit				SIM_PhysBAM_Fluid_Solver(const SIM_DataFactory *factory);
     virtual					~SIM_PhysBAM_Fluid_Solver();
     
 	/// This implements our own solver step
-	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
+	SIM_Solver::SIM_Result	solveSingleObjectSubclass(SIM_Engine& engine, SIM_Object& object, SIM_ObjectArray& feedback_to_objects, const SIM_Time& time_step, bool object_is_new);
 	
-	bool					setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time);
-	bool					updateSimObject(physbam_simulation* sim, SIM_Object* object);		
+	bool					setupNewSimObject(SIM_Object* object, SIM_Time time);
+	bool					updateSimObject(SIM_Object* object);		
 		
 private:
 	SIM_PhysBAM_WorldData 	*worlddata;
 	static const SIM_DopDescription* getSolverDopDescription();
 	
 	DECLARE_STANDARD_GETCASTTOTYPE();
-	DECLARE_DATAFACTORY(SIM_PhysBAM_Fluid_Solver, SIM_Solver, "PhysBAM_Fluid_Solver", getSolverDopDescription());	
+	DECLARE_DATAFACTORY(SIM_PhysBAM_Fluid_Solver, SIM_SingleSolver, "PhysBAM_Fluid_Solver", getSolverDopDescription());	
 };
 
 #endif

@@ -2,11 +2,11 @@
 
 #include "logtools.h"
 
-HPI_Fluid_Object::HPI_Fluid_Object() : size_x(0), size_y(0), size_z(0), object(0){
+HPI_Fluid_Object::HPI_Fluid_Object() : size_x(0), size_y(0), size_z(0), object(0), fluid_type(0){
 	
 }
 
-HPI_Fluid_Object::HPI_Fluid_Object(float s_x, float s_y, float s_z, unsigned int d_x, unsigned int d_y, unsigned int d_z) : object(0){
+HPI_Fluid_Object::HPI_Fluid_Object(float s_x, float s_y, float s_z, unsigned int d_x, unsigned int d_y, unsigned int d_z) : object(0), fluid_type(0){
 	setSize(s_x, s_y, s_z);
 	setDivisions(d_x, d_y, d_z);
 }
@@ -69,4 +69,14 @@ HPI_Fluid_Object::setPhysbamObject(physbam_object*	obj){
 physbam_object*
 HPI_Fluid_Object::getPhysbamObject(){
 	return object;
+}
+
+void
+HPI_Fluid_Object::setFluidType(unsigned char type){
+	fluid_type = type;
+}
+
+unsigned char
+HPI_Fluid_Object::getFluidType(){
+	return fluid_type;
 }
