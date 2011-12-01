@@ -44,7 +44,9 @@
 #include <SIM/SIM_ConAnchorRotational.h>
 #include <SIM/SIM_ConRel.h>
 #include <SIM/SIM_ScalarField.h>
+#include <SIM/SIM_VectorField.h>
 #include <SIMZ/SIM_SopScalarField.h>
+#include <SIMZ/SIM_SopVectorField.h>
 
 class SIM_PhysBAM_WorldData : public SIM_Data
 {

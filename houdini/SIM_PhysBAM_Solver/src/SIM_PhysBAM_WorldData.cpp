@@ -501,10 +501,12 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 	SIM_SopScalarField* primary = NULL;
 	SIM_SopScalarField* density = NULL;
 	SIM_SopScalarField* surface = NULL;
+	SIM_SopVectorField* velocity = NULL;
 	physbam_simulation* sim = NULL;
 	HPI_Fluid_Object	*fluid_object = new HPI_Fluid_Object();
-	density = SIM_DATA_CAST(object->getNamedSubData("density"), SIM_SopScalarField);
-	surface = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
+	density  = SIM_DATA_CAST(object->getNamedSubData("density"), SIM_SopScalarField);
+	surface  = SIM_DATA_CAST(object->getNamedSubData("surface"), SIM_SopScalarField);
+	velocity = SIM_DATA_CAST(object->getNamedSubData("vel"), SIM_SopVectorField);
 	
 	if(density){
 		fluid_object->setFluidType(SMOKE_TYPE);
@@ -530,13 +532,13 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 	
 	data_exchange::fluid_domain fd;
     fd.position.push_back(data_exchange::vf3(0,0,0));
-    fd.position.push_back(data_exchange::vf3(0,0,1));
-    fd.position.push_back(data_exchange::vf3(0,1,0));
-    fd.position.push_back(data_exchange::vf3(0,1,1));
-    fd.position.push_back(data_exchange::vf3(1,0,0));
-    fd.position.push_back(data_exchange::vf3(1,0,1));
-    fd.position.push_back(data_exchange::vf3(1,1,0));
-    fd.position.push_back(data_exchange::vf3(1,1,1));
+    fd.position.push_back(data_exchange::vf3(0,0,2));
+    fd.position.push_back(data_exchange::vf3(0,2,0));
+    fd.position.push_back(data_exchange::vf3(0,2,2));
+    fd.position.push_back(data_exchange::vf3(2,0,0));
+    fd.position.push_back(data_exchange::vf3(2,0,2));
+    fd.position.push_back(data_exchange::vf3(2,2,0));
+    fd.position.push_back(data_exchange::vf3(2,2,2));
     
     fd.mesh.insert_polygon(data_exchange::vi4(7,6,2,3));
     fd.mesh.insert_polygon(data_exchange::vi4(2,6,4,0));
@@ -568,10 +570,14 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 
 
 	SIM_RawField *field = primary->getField();
-	for(int i=0;i<=divisions.x();i++){
-		for(int j=0;j<=divisions.y();j++){
-			for(int k=0;k<=divisions.z();k++){
+	SIM_RawField *vel_x = velocity->getField(0);
+	SIM_RawField *vel_y = velocity->getField(1);
+	SIM_RawField *vel_z = velocity->getField(2);
+	for(int i=0;i<divisions.x();i++){
+		for(int j=0;j<divisions.y();j++){
+			for(int k=0;k<divisions.z();k++){
 				source_cells.push_back(data_exchange::vi3(i,j,k));
+				//source_velocities.push_back(data_exchange::vf3(vel_x->getCellValue(i,j,k),vel_y->getCellValue(i,j,k),vel_z->getCellValue(i,j,k)));
 				source_velocities.push_back(data_exchange::vf3(0,.5,0));
 				source_densities.push_back(field->getCellValue(i,j,k));
 			}
@@ -580,7 +586,25 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 	
     ir.set_vi3_array(sim, ir.get_id(sim, "source_cells"), &source_cells[0], source_cells.size(), 0);
     ir.set_vf3_array(sim, ir.get_id(sim, "source_velocities"), &source_velocities[0], source_velocities.size(), 0);
-    ir.set_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);    
+    ir.set_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);   
+    
+	data_exchange::scripted_geometry sg;
+	sg.position.push_back(data_exchange::vf3(1.5,1,1));
+	sg.position.push_back(data_exchange::vf3(.5,1,1));
+	sg.position.push_back(data_exchange::vf3(1,1.5,1));
+	sg.position.push_back(data_exchange::vf3(1,.5,1));
+	sg.position.push_back(data_exchange::vf3(1,1,1.5));
+	sg.position.push_back(data_exchange::vf3(1,1,.5));
+	sg.mesh.insert_polygon(data_exchange::vi3(0,2,4));
+	sg.mesh.insert_polygon(data_exchange::vi3(4,2,1));
+	sg.mesh.insert_polygon(data_exchange::vi3(0,5,2));
+	sg.mesh.insert_polygon(data_exchange::vi3(4,3,0));
+	sg.mesh.insert_polygon(data_exchange::vi3(1,3,4));
+	sg.mesh.insert_polygon(data_exchange::vi3(5,0,3));
+	sg.mesh.insert_polygon(data_exchange::vi3(2,5,1));
+	sg.mesh.insert_polygon(data_exchange::vi3(1,5,3));
+	physbam_object* d2 = ir.add_object(sim, &sg);
+	(void)d2; 
 	
 	LOG("Done");
 	LOG_UNDENT;	

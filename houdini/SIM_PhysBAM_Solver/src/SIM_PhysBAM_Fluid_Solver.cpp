@@ -67,19 +67,21 @@ bool SIM_PhysBAM_Fluid_Solver::updateSimObject(SIM_Object* object){
 	}
 	
 	divisions = primary->getDivisions();
-	
-	std::vector<float> source_densities (60*60*60, 0.0f);
-	ir.get_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);
-	
 	int w = divisions.x();
 	int h = divisions.y();
-	int d = divisions.z();
+	int d = divisions.z();	
+	
+	LOG("Updating grid " << w << " " << h << " " << d);
+	
+	std::vector<float> source_densities (w*h*d, 0.0f);
+	ir.get_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);
 	
 	SIM_RawField *field = primary->getField();
 	for(int x = 0; x < w; x++){
 		for(int y = 0; y < h; y++){
 			for(int z = 0; z < d; z++){
-				field->setCellValue(x, y, z, source_densities[x + w*y + h*w*z]);
+				field->setCellValue(x, y, z, source_densities[z + w*y + h*w*x]);
+				//field->setCellValue(x, y, z, field->getCellValue(x, y, z) + 0.1);
 			}
 		}
 	}
@@ -117,7 +119,7 @@ SIM_PhysBAM_Fluid_Solver::solveSingleObjectSubclass(SIM_Engine& engine, SIM_Obje
 		/// Run the simulation for the given time_step
 		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << time_step);	
 		sim = worlddata->getSimulation(object.getObjectId(), SMOKE_TYPE);
-		ir.simulate_frame(sim, 0.001);
+		ir.simulate_frame(sim, time_step);
 		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() simulated.");		
 					
 		LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() updating objects in sim: " << sim);
