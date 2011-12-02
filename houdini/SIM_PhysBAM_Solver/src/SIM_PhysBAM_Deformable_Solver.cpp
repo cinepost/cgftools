@@ -150,7 +150,7 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 	int						i;
 	const SIM_Time 			curr_time = engine.getSimulationTime();
 	
-	sim = worlddata->getSimulation();	
+	sim = worlddata->getSimulation(0, SOLID_TYPE);
 	
 	if (new_world) {
 		// setup basic forces and ground

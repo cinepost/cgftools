@@ -124,10 +124,12 @@ SIM_PhysBAM_WorldData::getSimulation(int uid, unsigned char type){
 			break;
 		}	
 			
-		if(sim){
+		if(sim != NULL){
 			LOG("SIM_PhysBAM_WorldData::getSimulation(unsigned char type) created instance: "  << sim);
 			ir.set_string(sim, ir.get_id(sim, "data_directory"), "/opt/PhysBAM-2011/Public_Data");
 			simulations->insert( std::pair<int, physbam_simulation*>(uid, sim));	
+		}else{
+			LOG("SIM_PhysBAM_WorldData::getSimulation(unsigned char type) ERROR CREATING SIMULATION INSTANCE!!!");
 		}	
 	}
 	
@@ -512,10 +514,12 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 		fluid_object->setFluidType(SMOKE_TYPE);
 		sim = getSimulation(object->getObjectId(), SMOKE_TYPE);
 		primary = density;
+		LOG("Adding smoke type object...");
 	}else if(surface){
 		fluid_object->setFluidType(WATER_TYPE);
 		sim = getSimulation(object->getObjectId(), WATER_TYPE);
 		primary = surface;
+		LOG("Adding water type object...");
 	}else{
 		LOG("Unknown fluid object type !!! Skipping ...");
 		LOG_UNDENT;	
@@ -564,15 +568,26 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
         grid_data.corner_location.data[0], grid_data.corner_location.data[1], grid_data.corner_location.data[2],
         grid_data.dx, grid_data.dimensions.data[0], grid_data.dimensions.data[1], grid_data.dimensions.data[2]);    
     
+	data_exchange::vf3 box_a(.9,-.2,.9), box_b(1.1,.2,1.1);
+	data_exchange::vi3 index_a, index_b;
+	for(int i=0;i<3;i++)
+	{
+		index_a.data[i] = std::max(0, (int) ceil((box_a.data[i] - grid_data.corner_location.data[i])/grid_data.dx));
+		index_b.data[i] = std::min(grid_data.dimensions.data[i]-1, (int) floor((box_b.data[i] - grid_data.corner_location.data[i])/grid_data.dx));
+	}
+    
     std::vector<data_exchange::vi3> source_cells;
     std::vector<data_exchange::vf3> source_velocities;
     std::vector<float> source_densities;
 
 
+	/*
 	SIM_RawField *field = primary->getField();
 	SIM_RawField *vel_x = velocity->getField(0);
 	SIM_RawField *vel_y = velocity->getField(1);
 	SIM_RawField *vel_z = velocity->getField(2);
+	
+	
 	for(int i=0;i<divisions.x();i++){
 		for(int j=0;j<divisions.y();j++){
 			for(int k=0;k<divisions.z();k++){
@@ -583,7 +598,21 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 			}
 		} 
 	}
+	*/
 	
+	printf("index data %i %i %i   %i %i %i\n",
+        index_a.data[0], index_a.data[1], index_a.data[2],
+        index_b.data[0], index_b.data[1], index_b.data[2]); 
+		
+	for(int i=index_a.data[0];i<=index_b.data[0];i++)
+		for(int j=index_a.data[1];j<=index_b.data[1];j++)
+			for(int k=index_a.data[2];k<=index_b.data[2];k++)
+			{
+				source_cells.push_back(data_exchange::vi3(i,j,k));
+				source_velocities.push_back(data_exchange::vf3(0,.5,0));
+				source_densities.push_back(10);
+			}
+		
     ir.set_vi3_array(sim, ir.get_id(sim, "source_cells"), &source_cells[0], source_cells.size(), 0);
     ir.set_vf3_array(sim, ir.get_id(sim, "source_velocities"), &source_velocities[0], source_velocities.size(), 0);
     ir.set_float_array(sim, ir.get_id(sim, "source_densities"), &source_densities[0], source_densities.size(), 0);   
