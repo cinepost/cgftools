@@ -1,9 +1,11 @@
 #ifndef __HPI_Fluid_Object_h__
 #define __HPI_Fluid_Object_h__
 
-#include "SIM_PhysBAM_Commons.h"
+#include <SIM/SIM_Object.h>
+#include "HPI_Object.h"
 
-class HPI_Fluid_Object{
+class HPI_Fluid_Object : public HPI_Object
+{
 	public:
 		HPI_Fluid_Object();
 		HPI_Fluid_Object(float s_x, float s_y, float s_z, unsigned int d_x, unsigned int d_y, unsigned int d_z);
@@ -14,7 +16,10 @@ class HPI_Fluid_Object{
 		void			setPhysbamObject(physbam_object *obj);
 		void			setFluidType(unsigned char type);
 		unsigned char	getFluidType();
+		
+		bool			setFromObject(SIM_Object *object, physbam_simulation *sim);
 		physbam_object*	getPhysbamObject();
+		int				getUid();
 		
 		float SIZE_X();
 		float SIZE_Y();
@@ -25,10 +30,11 @@ class HPI_Fluid_Object{
 		unsigned int DIV_Z();	
 		
 	private:
-		physbam_object*	object;
+		physbam_object*	pb_object;
 		float 			size_x, size_y, size_z;
 		unsigned int 	div_x, div_y, div_z;
 		unsigned char 	fluid_type;
+		int				uid;
 };
 
 #endif

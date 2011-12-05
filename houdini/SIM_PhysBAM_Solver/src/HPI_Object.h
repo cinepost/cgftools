@@ -1,21 +1,20 @@
-#ifndef __SIM_PhysBAM_Deformable_Solver_h__
-#define __SIM_PhysBAM_Deformable_Solver_h__
+#ifndef __HPI_Object_h__
+#define __HPI_Object_h__
 
-#include "HPI_trimesh.h"
+#include "SIM_PhysBAM_Commons.h"
 
 class HPI_Object{
-public:
-	HPI_Object();
-	~HPI_Object();
+	public:
+		HPI_Object();
+		~HPI_Object();
 	
-private:
-	HPI_TriMesh			trimesh;
-	physbam_object		object;
-	
-private:	
-	HPI_TriMesh*		getTriMesh();
-	physbam
-	void				setTriMesh(HPI_TriMesh* inmesh);
+		physbam_object*	getPhysbamObject();
+		int				getUid();
+		
+	protected:
+		physbam_object*	pb_object;
+		int				uid;	
+
 };
 
 #endif

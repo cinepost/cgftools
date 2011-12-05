@@ -3,23 +3,13 @@
 
 extern interface_routines ir;
 
-HPI_Solid_Object::HPI_Solid_Object() : pb_object(0), trimesh(0), uid(0) {
+HPI_Solid_Object::HPI_Solid_Object() : HPI_Object(), trimesh(0) {
 	
-}
-
-physbam_object*
-HPI_Solid_Object::getPhysbamObject(){
-	return pb_object;
 }
 
 HPI_TriMesh*
 HPI_Solid_Object::getTrimesh(){
 	return trimesh;
-}
-
-int
-HPI_Solid_Object::getUid(){
-	return uid;
 }
 
 bool
