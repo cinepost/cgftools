@@ -66,28 +66,30 @@ bool SIM_PhysBAM_Fluid_Solver::updateSimObject(SIM_Object* object){
 		return false;
 	}
 	
-	divisions = primary->getDivisions();
-	int w = divisions.x();
-	int h = divisions.y();
-	int d = divisions.z();	
+	divisions = primary->getDivisions();	
 	
 	data_exchange::fluid_grid_data grid_data;
     ir.get_fluid_grid_data(sim, grid_data);
     
-    LOG("Updating from grid data " << grid_data.dimensions.data[0] << " " << grid_data.dimensions.data[1] << " " << grid_data.dimensions.data[2]);  
+    int w = divisions.x();
+	int h = divisions.y();
+	int d = divisions.z();
+    
+    LOG("Updating from grid data " << w << " " << h << " " << d);  
 	
-	std::vector<float> densities ( grid_data.dimensions.data[0] * grid_data.dimensions.data[1] * grid_data.dimensions.data[2], 0.0f);
-	//ir.get_float_array(sim, ir.get_id(sim, "densities"), &densities[0], densities.size(), 0);
+	std::vector<float> densities ( w * h * d, 0.0f);
+	ir.get_float_array(sim, ir.get_id(sim, "smoke_density"), &densities[0], densities.size(), 0);
 	
-	//SIM_RawField *field = primary->getField();
-	//for(int x = 0; x < w; x++){
-	//	for(int y = 0; y < h; y++){
-	//		for(int z = 0; z < d; z++){
-	//			field->setCellValue(x, y, z, densities[z + w*y + h*w*x]);
+	SIM_RawField *field = primary->getField();	
+	
+	for(int x = 0; x < w; x++){
+		for(int y = 0; y < h; y++){
+			for(int z = 0; z < d; z++){
+				field->setCellValue(x, y, z, densities[z + w*y + h*w*x]);
 				//field->setCellValue(x, y, z, field->getCellValue(x, y, z) + 0.1);
-	//		}
-	//	}
-	//}
+			}
+		}
+	}
 
 	LOG("Done.");
 	LOG_UNDENT;
@@ -122,7 +124,7 @@ SIM_PhysBAM_Fluid_Solver::solveSingleObjectSubclass(SIM_Engine& engine, SIM_Obje
 		/// Run the simulation for the given time_step
 		sim = worlddata->getSimulation(object.getObjectId(), SMOKE_TYPE);
 		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << time_step << " for object: " << object.getObjectId());	
-		//ir.simulate_frame(sim, .1);
+		ir.simulate_frame(sim, .1);
 		LOG("SIM_PhysBAM_Deformable_Solver solveSingleObjectSubclass() simulated.");		
 					
 		LOG("SIM_PhysBAM_Fluid_Solver solveSingleObjectSubclass() updating objects in sim: " << sim);

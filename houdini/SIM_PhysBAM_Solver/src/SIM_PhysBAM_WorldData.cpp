@@ -8,7 +8,7 @@ extern interface_routines ir;
 
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
 	simulation(NULL), simulations(0),
-	objects(0), fluid_objects(0),
+	objects(0), fluid_objects(0), solid_objects(0),
 	forces(0),
 	trimeshes(0),
 	m_shareCount(0){
@@ -18,16 +18,6 @@ SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : S
 SIM_PhysBAM_WorldData::~SIM_PhysBAM_WorldData(){ 
 	clear();
 };
-
-std::map<int, HPI_TriMesh*>*
-SIM_PhysBAM_WorldData::getTriMeshes(){
-	return trimeshes;
-}
-
-HPI_TriMesh*
-SIM_PhysBAM_WorldData::getTrimesh(int id){
-	return trimeshes->find(id)->second;
-}
 
 std::map<int, physbam_object*>* 
 SIM_PhysBAM_WorldData::getObjects(void){
@@ -42,6 +32,11 @@ SIM_PhysBAM_WorldData::getForce(int id){
 HPI_Fluid_Object*
 SIM_PhysBAM_WorldData::getFluidObject(int id){
 	return fluid_objects->find(id)->second;
+}
+
+HPI_Solid_Object*
+SIM_PhysBAM_WorldData::getSolidObject(int id){
+	return solid_objects->find(id)->second;
 }
 
 std::map<int, physbam_force*>*
@@ -60,13 +55,13 @@ SIM_PhysBAM_WorldData::forceExists(int id){
 }
 
 bool
-SIM_PhysBAM_WorldData::trimeshExists(int id){
-	return trimeshes->find( id ) != trimeshes->end();
+SIM_PhysBAM_WorldData::fluidObjectExists(int id){
+	return fluid_objects->find( id ) != fluid_objects->end();
 }
 
 bool
-SIM_PhysBAM_WorldData::fluidObjectExists(int id){
-	return fluid_objects->find( id ) != fluid_objects->end();
+SIM_PhysBAM_WorldData::solidObjectExists(int id){
+	return solid_objects->find( id ) != solid_objects->end();
 }
 
 bool
@@ -162,9 +157,9 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	simulation		= NULL;
 	simulations		= new std::map<int, physbam_simulation*>();
 	objects			= new std::map<int, physbam_object*>();
-	fluid_objects	= new std::map<int, HPI_Fluid_Object*>();
 	forces			= new std::map<int, physbam_force*>();
-	trimeshes		= new std::map<int, HPI_TriMesh*>();
+	fluid_objects	= new std::map<int, HPI_Fluid_Object*>();
+	solid_objects	= new std::map<int, HPI_Solid_Object*>();
 	m_shareCount	= new int(1);
 	//LOG("Done");
 	//LOG_UNDENT;
@@ -181,8 +176,8 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 		simulations		= world->simulations;	
 		objects 		= world->objects;
 		fluid_objects 	= world->fluid_objects;	
-		forces 			= world->forces;
-		trimeshes 		= world->trimeshes;						
+		solid_objects 	= world->solid_objects;
+		forces 			= world->forces;						
 		m_shareCount 	= world->m_shareCount;
 		(*m_shareCount)++;
 	}
@@ -204,8 +199,8 @@ void SIM_PhysBAM_WorldData::clear(){
 			for ( typename std::map<int, physbam_simulation*>::iterator it = simulations->begin(); it != simulations->end(); ++it ){delete it->second; };simulations->clear();
 			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second; };objects->clear();
 			for ( typename std::map<int, HPI_Fluid_Object*>::iterator it = fluid_objects->begin(); it != fluid_objects->end(); ++it ){delete it->second;};fluid_objects->clear();
+			for ( typename std::map<int, HPI_Solid_Object*>::iterator it = solid_objects->begin(); it != solid_objects->end(); ++it ){delete it->second;};solid_objects->clear();
 			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
-			for ( typename std::map<int, HPI_TriMesh*>::iterator it = trimeshes->begin(); it != trimeshes->end(); ++it ){delete it->second;};trimeshes->clear();
 
 			delete 	m_shareCount;
 		}
@@ -214,7 +209,8 @@ void SIM_PhysBAM_WorldData::clear(){
 	simulations		= NULL;
 	objects			= NULL;
 	forces			= NULL;
-	trimeshes		= NULL;							
+	fluid_objects	= NULL;
+	solid_objects 	= NULL;
 	m_shareCount 	= 0;
 	//LOG("Done");
 	//LOG_UNDENT;	
@@ -263,234 +259,13 @@ SIM_PhysBAM_WorldData::addNewForce(const SIM_Data *force){
 
 physbam_object*
 SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
-	LOG_INDENT;
-	LOG("SIM_PhysBAM_WorldData::addNewObject(const SIM_Object *object) called.");
-	
-	physbam_object *pb_object = NULL;
-	SIM_SopGeometry* geometry;
-	
-	geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
-	
-    if (!geometry)
-    {
-		LOG("This object has no geometry. Skipping !!!");
-		LOG_UNDENT;
-    }else{
-		
-		SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
-		
-		float		mass 				= 10.0;
-		float 		stiffness 			= 1e3;
-		float 		damping 			= .01;
-		int 		approx_number_cells = 100;
-		UT_Vector3	velocity 			= UT_Vector3(0.0f,0.0f,0.0f);
-		UT_Vector3	angular_velocity 	= UT_Vector3(0.0f,0.0f,0.0f);
-		UT_Vector3	angular_center 		= UT_Vector3(0.0f,0.0f,0.0f);
-				
-		bool	deformable			= true;
-		
-		if(body_data){
-			LOG("Fetching options from PhysBAM_Body object data.");
-			const SIM_Options *data = &body_data->getData();
-			
-			if(data->hasOption("mass"))mass = data->getOptionF("mass");
-			if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
-			if(data->hasOption("damping"))damping = data->getOptionF("damping");
-			if(data->hasOption("approx_number_of_cells"))approx_number_cells = data->getOptionI("approx_number_of_cells");
-			if(data->hasOption("velocity"))velocity = data->getOptionV3("velocity");
-			if(data->hasOption("angular_velocity"))angular_velocity = data->getOptionV3("angular_velocity");
-			if(data->hasOption("angular_center"))angular_center = data->getOptionV3("angular_center");	
-		}
-		
-		const GU_Detail*				const gdp(geometry->getGeometry().readLock());
-		const UT_Vector4F*				pt_pos;
-		const GEO_Primitive*			prim;
-		data_exchange::deformable_body 	db;
-		
-		int	pb_vertex_index = 0;
-		HPI_TriMesh	*trimesh = new HPI_TriMesh();
-		
-		FOR_ALL_PRIMITIVES(gdp, prim)
-		{
-			if(prim->getPrimitiveId() == GEOPRIMPOLY){
-				const GEO_Vertex*	v;
-				GEO_Point*	p;
-				pair<std::map<GEO_Point*, int>::iterator,bool> ret;
-				int i1, i2, i3, i4;
-				switch(prim->getVertexCount()){
-					case 3:
-						v = &prim->getVertex(0);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i1 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i1 = pb_vertex_index++;
-						}	
-						
-						v = &prim->getVertex(1);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i2 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i2 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(2);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i3 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i3 = pb_vertex_index++;
-						}
-						
-						
-						//std::cout << "indexes3:" << i1 << " " << i2 << " " << i3 << std::endl;
-						db.mesh.insert_polygon(data_exchange::vi3(i3, i2, i1));
-						break;
-					case 4:
-						v = &prim->getVertex(0);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i1 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i1 = pb_vertex_index++;
-						}	
-						
-						v = &prim->getVertex(1);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i2 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i2 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(2);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i3 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i3 = pb_vertex_index++;
-						}
-	
-						v = &prim->getVertex(3);
-						p = v->getPt();
-						ret = trimesh->points.insert ( std::pair<GEO_Point*, int>(p, pb_vertex_index) );
-						if(ret.second==false){
-							// this point already existed. use existing index
-							i4 = ret.first->second;
-						}else{
-							// new point. we need to store in in def body
-							db.position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2]));
-							i4 = pb_vertex_index++;
-						}					
-						//std::cout << "indexes4:" << i1 << " " << i2 << " " << i3 << " " << i4 << std::endl;
-						db.mesh.insert_polygon(data_exchange::vi4(i4, i3, i2, i1));				
-						break;
-					default:
-						std::cout << prim->getVertexCount();
-						break;
-				}
-			}
-		}
-	
-		db.mass 				= mass;
-		db.approx_number_cells 	= approx_number_cells;
-		db.velocity 			= data_exchange::vf3(velocity.x(),velocity.y(),velocity.z());
-		db.angular_velocity 	= data_exchange::vf3(angular_velocity.x(),angular_velocity.y(),angular_velocity.z());
-		db.angular_center 		= data_exchange::vf3(angular_center.x(),angular_center.y(),angular_center.z());
-		
-		pb_object = ir.add_object(getSimulation(), &db);
-		
-		if(pb_object){
-			//~ {
-				//~ int xid = ir.get_id(pb_object, "position");
-				//~ int len = ir.get_vf3_array_length(pb_object, xid);
-				//~ std::vector<data_exchange::vf3> x_array(len);
-				//~ ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-				//~ for(size_t i=0; i<x_array.size(); i++)
-				//~ printf("(%g %g %g)\n", x_array[i].data[0], x_array[i].data[1], x_array[i].data[2]);
-			//~ }
-			LOG("PhysBAM object " << object->getObjectId() << " added to worlddata with pointer: " << pb_object ); 		
-			trimeshes->insert( std::pair<int, HPI_TriMesh*>(object->getObjectId(), trimesh));
-			objects->insert( std::pair<int, physbam_object*>(object->getObjectId(), pb_object));
-			
-			/// Now create constraints
-			SIM_ConstraintIterator::initConstraints(*object, time);
-			SIM_DataFilterByType 	anchorFilter("SIM_ConAnchor");
-			SIM_ConstraintIterator 	conit(*object, 0, &anchorFilter, &anchorFilter, time);
-
-			for (conit.rewind(); !conit.atEnd(); conit.advance())
-			{
-				SIM_ConRel                      *conrel;
-				const SIM_ConAnchorSpatial      *spanchor, *goalspanchor;
-				const SIM_ConAnchorRotational  	*rotanchor, *goalrotanchor;
-				
-				conrel = conit.getConRel();
-				spanchor = SIM_DATA_CASTCONST(conit.getCurrentAnchor(), SIM_ConAnchorSpatial);
-				goalspanchor = SIM_DATA_CASTCONST(conit.getGoalAnchor(), SIM_ConAnchorSpatial);
-				if( spanchor && goalspanchor )
-				{
-					// Handle spatial constraints.
-					LOG("Constraint spatial." << std::endl);
-				}
-				
-				rotanchor = SIM_DATA_CASTCONST(conit.getCurrentAnchor(), SIM_ConAnchorRotational);
-				goalrotanchor = SIM_DATA_CASTCONST(conit.getGoalAnchor(), SIM_ConAnchorRotational);
-				if( rotanchor && goalrotanchor )
-				{
-					// Handle Rotational constraints.
-					LOG("Constraint rotational." << std::endl);
-				}
-			}
-
-			/*
-			SIM_DataFilterByType 	anchorFilter("SIM_Constraint");
-			SIM_ConstraintIterator 	conit(*object, 0, &anchorFilter, &anchorFilter, time);
-            const SIM_Constraint	*constraint = 0;
-            
-            for (conit.rewind(); !conit.atEnd(); conit.advance())
-			{
-				constraint = conit.getConstraint();
-				LOG("Constraint: " << constraint->getDataType() << std::endl);
-			}*/                
-                            
-			/// Create volume force for deformable body
-			LOG("Creating PhysBAM volumetric force for object: " << object->getObjectId());
-			data_exchange::volumetric_force vf;
-			vf.stiffness = stiffness;
-			vf.damping = damping;
-			physbam_force* f1 = ir.add_force(getSimulation(), &vf);
-			ir.apply_force_to_object(pb_object, f1);
-		}
+	HPI_Solid_Object	*obj = new HPI_Solid_Object();
+	if( obj->setFromObject(object, getSimulation(0, SOLID_TYPE))){
+		solid_objects->insert( std::pair<int, HPI_Solid_Object*>(obj->getUid(), obj));
+		return obj->getPhysbamObject();
+	} else {	
+		return 0;	
 	}
-	
-	LOG("Done");
-	LOG_UNDENT;
-	return pb_object;	
 }
 
 bool
@@ -558,7 +333,7 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
     fd.is_wall.push_back(1);
     fd.is_wall.push_back(1);
 
-    fd.resolution=60;
+    fd.resolution=64;
     ir.add_object(sim, &fd);
     
     data_exchange::fluid_grid_data grid_data;
@@ -581,11 +356,11 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
     std::vector<float> source_densities;
 
 
-	/*
+	
 	SIM_RawField *field = primary->getField();
-	SIM_RawField *vel_x = velocity->getField(0);
-	SIM_RawField *vel_y = velocity->getField(1);
-	SIM_RawField *vel_z = velocity->getField(2);
+	//SIM_RawField *vel_x = velocity->getField(0);
+	//SIM_RawField *vel_y = velocity->getField(1);
+	//SIM_RawField *vel_z = velocity->getField(2);
 	
 	
 	for(int i=0;i<divisions.x();i++){
@@ -598,20 +373,20 @@ SIM_PhysBAM_WorldData::addNewFluidObject(SIM_Object *object, SIM_Time time){
 			}
 		} 
 	}
-	*/
 	
-	printf("index data %i %i %i   %i %i %i\n",
-        index_a.data[0], index_a.data[1], index_a.data[2],
-        index_b.data[0], index_b.data[1], index_b.data[2]); 
+	
+	//printf("index data %i %i %i   %i %i %i\n",
+    //    index_a.data[0], index_a.data[1], index_a.data[2],
+    //    index_b.data[0], index_b.data[1], index_b.data[2]); 
 		
-	for(int i=index_a.data[0];i<=index_b.data[0];i++)
-		for(int j=index_a.data[1];j<=index_b.data[1];j++)
-			for(int k=index_a.data[2];k<=index_b.data[2];k++)
-			{
-				source_cells.push_back(data_exchange::vi3(i,j,k));
-				source_velocities.push_back(data_exchange::vf3(0,.5,0));
-				source_densities.push_back(10);
-			}
+	//for(int i=index_a.data[0];i<=index_b.data[0];i++)
+	//	for(int j=index_a.data[1];j<=index_b.data[1];j++)
+	//		for(int k=index_a.data[2];k<=index_b.data[2];k++)
+	//		{
+	//			source_cells.push_back(data_exchange::vi3(i,j,k));
+	//			source_velocities.push_back(data_exchange::vf3(0,.5,0));
+	//			source_densities.push_back(10);
+	//		}
 		
     ir.set_vi3_array(sim, ir.get_id(sim, "source_cells"), &source_cells[0], source_cells.size(), 0);
     ir.set_vf3_array(sim, ir.get_id(sim, "source_velocities"), &source_velocities[0], source_velocities.size(), 0);

@@ -82,7 +82,7 @@ bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM
 	geo = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_Geometry);
 	
 	if(geo!=0){
-		physbam_object* pb_object = worlddata->getObjects()->find(object->getObjectId())->second;
+		physbam_object* pb_object = worlddata->getSolidObject(object->getObjectId())->getPhysbamObject();
 		if(pb_object){
 			int xid = ir.get_id(pb_object, "position");
 			int len = ir.get_vf3_array_length(pb_object, xid);
@@ -98,8 +98,7 @@ bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM
 				GEO_Point           			*geopt;
 				
 				std::cout << "pointer:" << pb_object << " readed for object: " << object->getObjectId() << std::endl;
-				HPI_TriMesh		*trimesh = NULL;
-				trimesh = worlddata->getTrimesh(object->getObjectId());
+				HPI_TriMesh		*trimesh = worlddata->getSolidObject(object->getObjectId())->getTrimesh();
 				if(!trimesh){
 					std::cout << "Unable to get trimesh for object: " << object->getObjectId() << std::endl;
 					return false;

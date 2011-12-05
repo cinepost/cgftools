@@ -11,7 +11,8 @@ SOURCES = \
     ./SIM_PhysBAM_Deformable_Solver.cpp \
     ./SIM_PhysBAM_Fluid_Solver.cpp \
     ./SIM_PhysBAM_WorldData.cpp \
-    ./HPI_Fluid_Object.cpp
+    ./HPI_Fluid_Object.cpp \
+    ./HPI_Solid_Object.cpp
 
 # Icons for custom node operators.
 ICONS = \
