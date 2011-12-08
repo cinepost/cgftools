@@ -13,7 +13,8 @@ SOURCES = \
     ./SIM_PhysBAM_WorldData.cpp \
     ./HPI_Fluid_Object.cpp \
     ./HPI_Solid_Object.cpp \
-    ./HPI_Object.cpp
+    ./HPI_Object.cpp \
+    ./HPI_Trimesh.cpp
 
 # Icons for custom node operators.
 ICONS = \

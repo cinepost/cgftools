@@ -89,31 +89,8 @@ bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM
 			std::vector<data_exchange::vf3> x_array(len);
 			ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
 			
-			/// Get the object's last state before this time step
-			geometry_copy = SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE);	
-
-			if(geometry_copy){
-				GU_DetailHandleAutoWriteLock	gdl(geometry_copy->lockGeometry());
-				GU_Detail           			&gdp = *gdl.getGdp();
-				GEO_Point           			*geopt;
-				
-				std::cout << "pointer:" << pb_object << " readed for object: " << object->getObjectId() << std::endl;
-				HPI_TriMesh		*trimesh = worlddata->getSolidObject(object->getObjectId())->getTrimesh();
-				if(!trimesh){
-					std::cout << "Unable to get trimesh for object: " << object->getObjectId() << std::endl;
-					return false;
-				}
-	
-				std::map<GEO_Point*, int>::iterator iter;
-				for (iter = trimesh->points.begin(); iter != trimesh->points.end(); iter++) {
-					GEO_Point *pt = iter->first;
-					int			i = iter->second;
-					pt->setPos(x_array[i].data[0], x_array[i].data[1], x_array[i].data[2], 1);
-				}
-				geometry_copy->releaseGeometry(); /// Store the integrated simulation state in geometry_copy
-			}else{
-				std::cout << "Unable to get GeometryCopy for object: " << object->getObjectId() << " to update!" <<std::endl;
-			}
+			HPI_TriMesh		*trimesh = worlddata->getSolidObject(object->getObjectId())->getTrimesh();
+			trimesh->setToObject(object);
 		}
 	}else{
 		std::cout << "Unable to get Geometry for object: " << object->getObjectId() << " to update!" <<std::endl;
