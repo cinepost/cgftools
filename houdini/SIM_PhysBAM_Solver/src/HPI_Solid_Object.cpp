@@ -15,12 +15,7 @@ HPI_Solid_Object::getTrimesh(){
 bool
 HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	LOG("HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim) called.");
-	SIM_SopGeometry* geometry;
-	geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
 	uid = object->getObjectId();
-	
-    if(!geometry)
-		return false;
    
 	SIM_EmptyData	*body_data = SIM_DATA_CAST(object->getNamedSubData("PhysBAM_Body"), SIM_EmptyData);
 	
@@ -51,7 +46,7 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	
 	int	pb_vertex_index = 0;
 	trimesh = new HPI_TriMesh();
-	trimesh->setFromObject(object);
+	trimesh->setFromObject(object, &db);
 
 	db.mass 				= mass;
 	db.approx_number_cells 	= approx_number_cells;
@@ -113,4 +108,18 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	ir.apply_force_to_object(pb_object, f1);
 	
 	return true;
+}
+
+bool
+HPI_Solid_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *sim){	
+	if(pb_object){
+		int xid = ir.get_id(pb_object, "position");
+		int len = ir.get_vf3_array_length(pb_object, xid);
+		std::vector<data_exchange::vf3> pos_array(len);
+		ir.get_vf3_array(pb_object, xid, &pos_array[0], len, 0);
+			
+		trimesh->setToObject(object, &pos_array);
+		return true;
+	}
+	return false;
 }

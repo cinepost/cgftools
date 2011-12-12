@@ -75,27 +75,8 @@ bool SIM_PhysBAM_Deformable_Solver::setupNewSimObject(physbam_simulation* sim, S
 	return false;
 }
 bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
-	std::cout << "\t" << object->getName() << " id: " << object->getObjectId() << std::endl;
-	SIM_GeometryCopy	*geometry_copy = 0;
-	SIM_Geometry		*geo = 0;
-	
-	geo = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_Geometry);
-	
-	if(geo!=0){
-		physbam_object* pb_object = worlddata->getSolidObject(object->getObjectId())->getPhysbamObject();
-		if(pb_object){
-			int xid = ir.get_id(pb_object, "position");
-			int len = ir.get_vf3_array_length(pb_object, xid);
-			std::vector<data_exchange::vf3> x_array(len);
-			ir.get_vf3_array(pb_object, xid, &x_array[0], len, 0);
-			
-			HPI_TriMesh		*trimesh = worlddata->getSolidObject(object->getObjectId())->getTrimesh();
-			trimesh->setToObject(object);
-		}
-	}else{
-		std::cout << "Unable to get Geometry for object: " << object->getObjectId() << " to update!" <<std::endl;
-	}
-	return true;
+	bool result = worlddata->getSolidObject(object->getObjectId())->updateSimulatedObject(object, sim);
+	return result;
 }
 	
 SIM_Solver::SIM_Result
