@@ -47,11 +47,11 @@
 #include <SIM/SIM_VectorField.h>
 #include <SIMZ/SIM_SopScalarField.h>
 #include <SIMZ/SIM_SopVectorField.h>
+#include <SIM/SIM_SDF.h>
 
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
-	std::map<int, HPI_TriMesh*>			*getTriMeshes();
 	std::map<int, physbam_object*>		*getObjects();
 	std::map<int, physbam_force*>		*getForces();
 	physbam_force						*getForce(int id);
@@ -62,8 +62,11 @@ public:
 	bool								fluidObjectExists(int id);
 	bool								solidObjectExists(int id);
 	bool								simulationExists(unsigned char type);
+	
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);
+	physbam_object						*addNewSolidObject(SIM_Object *object);
+	physbam_object						*addNewGroundObject(SIM_Object *object);
 	bool								addNewFluidObject(SIM_Object *object, SIM_Time time);
 
 	physbam_simulation					*getSimulation();
@@ -96,7 +99,6 @@ public:
 	std::map<int, physbam_simulation*>	*simulations;
 	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
-	std::map<int, HPI_TriMesh*>			*trimeshes;
 	std::map<int, HPI_Solid_Object*>	*solid_objects;
 	std::map<int, HPI_Fluid_Object*>	*fluid_objects;
 	int									*m_shareCount;

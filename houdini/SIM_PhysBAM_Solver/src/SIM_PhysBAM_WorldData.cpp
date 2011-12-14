@@ -10,7 +10,6 @@ SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : S
 	simulation(NULL), simulations(0),
 	objects(0), fluid_objects(0), solid_objects(0),
 	forces(0),
-	trimeshes(0),
 	m_shareCount(0){
 
 };
@@ -259,13 +258,117 @@ SIM_PhysBAM_WorldData::addNewForce(const SIM_Data *force){
 
 physbam_object*
 SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time) called.");	
+	SIM_SopGeometry* 	geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
+    if(geometry){
+		SIM_SDF	*volume = NULL;
+		volume = SIM_DATA_CAST(geometry->getNamedSubData("Volume"), SIM_SDF);
+		if(volume){
+			LOG("Adding volumetric object...");
+			if( volume->getMode() == 4){
+					LOG("Done");
+					LOG_UNDENT;
+				return addNewGroundObject(object);	
+			}
+		}
+		LOG("Done");
+		LOG_UNDENT;
+		return addNewSolidObject(object);
+	}
+	LOG("Unable to add object:" << object->getObjectId());
+	LOG_UNDENT;
+	return 0;
+}
+
+physbam_object*
+SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object) setting up simple ground:");
+	const SIM_Position *pos = object->getPosition();
+	UT_Vector3 t;
+	UT_Quaternion q;
+	UT_DMatrix4 m;
+	UT_Matrix3	rot;
+	
+	pos->getPosition(t);
+	pos->getOrientation(q);
+	pos->getTransform(m);
+	
+	m.extractRotate(rot);
+
+	UT_Vector3 n(0 ,1 ,0);
+	n = n * rot;
+	//n = n / n.length();
+	
+	data_exchange::ground_plane gp;
+	gp.position = data_exchange::vf3(t.x(), t.y(), t.z());
+	gp.normal 	= data_exchange::vf3(n.x(), n.y(), n.z());
+	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
+	LOG("Done");
+	LOG_UNDENT;
+	return ir.add_object(getSimulation(0, SOLID_TYPE), &gp);
+}
+
+physbam_object*
+SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object) setting up solid object:");	
 	HPI_Solid_Object	*obj = new HPI_Solid_Object();
 	if( obj->setFromObject(object, getSimulation(0, SOLID_TYPE))){
+		/// Add affector objects
+		SIM_ObjectArray		objects;		
+		object->getAffectors(objects, "SIM_RelationshipCollide");
+		
+		if(objects.entries() > 0){
+			LOG("Setting up " << objects.entries() << " affectors...");
+			SIM_Object *obj;
+			for(int i = 0; i < objects.entries(); i++){
+				obj = (SIM_Object*)objects(i);
+				if(object->getObjectId() != obj->getObjectId()){
+					LOG("Setup affector: " << obj->getName());
+					addNewObject(obj, 0);
+				}
+			}
+		}
+		
+		
+		/// Add object related forces
+		const SIM_Data	*force;
+		SIM_ConstDataArray forces;
+	
+		object->filterConstSubData( forces, 0, SIM_DataFilterByType("SIM_Force"), SIM_FORCES_DATANAME, SIM_DataFilterNone() );
+		if(!forces.isEmpty()){
+			LOG("Creating PhysBAM forces ...");
+			physbam_force	*pb_force;
+			int force_id	= 0;
+			
+			for(int i=0; i < forces.entries(); i++){
+				pb_force = NULL;
+				force = forces[i];
+				force_id = force->getCreatorId();
+				if(!forceExists(force_id)){
+					/// Add this force to world data
+					pb_force = addNewForce(force);
+				}else{
+					/// Use existing force
+					LOG("Bind existing force " << force->getDataType());	
+					pb_force = getForce(force_id);
+				}
+				
+				if(pb_force)
+					ir.apply_force_to_object(obj->getPhysbamObject(), pb_force);		
+			}
+		}
+		/// Add id-object pair 
 		solid_objects->insert( std::pair<int, HPI_Solid_Object*>(obj->getUid(), obj));
+		LOG("Done");
+		LOG_UNDENT;
 		return obj->getPhysbamObject();
-	} else {	
-		return 0;	
 	}
+	LOG("Done");
+	LOG_UNDENT;
+	return 0;	
 }
 
 bool

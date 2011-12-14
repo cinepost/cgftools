@@ -27,53 +27,15 @@ const SIM_DopDescription* SIM_PhysBAM_Deformable_Solver::getSolverDopDescription
 
 bool SIM_PhysBAM_Deformable_Solver::setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time){
 	LOG_INDENT;
-	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() called.");
+	LOG("SIM_PhysBAM_Deformable_Solver:setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time) called.");
 	LOG(object->getName() << " id: " << object->getObjectId());
 	
-	SIM_Data*	physbam_body = NULL;
-	physbam_body = object->getNamedSubData("PhysBAM_Body");
-    
-    if(physbam_body){
-		LOG("Creating PhysBAM object...");
-		physbam_object* pb_object = worlddata->addNewObject(object, time);
-		
-		if(pb_object){
-			/// Add object related forces
-			const SIM_Data	*force;
-			SIM_ConstDataArray forces;
-		
-			object->filterConstSubData( forces, 0, SIM_DataFilterByType("SIM_Force"), SIM_FORCES_DATANAME, SIM_DataFilterNone() );
-			
-			if(!forces.isEmpty()){
-				LOG("Creating PhysBAM forces ...");
-				physbam_force	*pb_force;
-				int force_id	= 0;
-				
-				for(int i=0; i < forces.entries(); i++){
-					pb_force = NULL;
-					force = forces[i];
-					force_id = force->getCreatorId();
-					if(!worlddata->forceExists(force_id)){
-						/// Add this force to world data
-						pb_force = worlddata->addNewForce(force);
-					}else{
-						/// Use existing force
-						LOG("Bind existing force " << force->getDataType());	
-						pb_force = worlddata->getForce(force_id);
-					}
-					
-					if(pb_force)
-						ir.apply_force_to_object(pb_object, pb_force);		
-				}
-			}
-			return true;
-		}else{
-			printf("Unable to add new object %d into simulation !!!\n", object->getObjectId());
-			return false;
-		}
-	}
-	return false;
+	physbam_object* pb_object = worlddata->addNewObject(object, time);
+	LOG("Done.");
+	LOG_UNDENT;
+	return true;	
 }
+
 bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
 	bool result = worlddata->getSolidObject(object->getObjectId())->updateSimulatedObject(object, sim);
 	return result;
@@ -108,16 +70,6 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 	const SIM_Time 			curr_time = engine.getSimulationTime();
 	
 	sim = worlddata->getSimulation(0, SOLID_TYPE);
-	
-	if (new_world) {
-		// setup basic forces and ground
-		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up simple ground:");
-		data_exchange::ground_plane gp;
-		gp.position = data_exchange::vf3(0,-10,0);
-		gp.normal = data_exchange::vf3(0,1,0);
-		ir.add_object(sim, &gp);
-	}
-	
 	/// Loop through new objects and add them into sim.
 	if (newobjects.entries() > 0) {
 		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new objects in sim:");	

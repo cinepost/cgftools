@@ -12,6 +12,7 @@
 #include <SIM/SIM_ConAnchorRotational.h>
 #include <SIM/SIM_ConRel.h>
 #include "HPI_Object.h"
+#include "HPI_Trimesh.h"
 
 class HPI_Baked_Object : public HPI_Object
 {

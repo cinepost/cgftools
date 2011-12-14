@@ -22,10 +22,10 @@ class HPI_Solid_Object : public HPI_Object
 	
 		bool			setFromObject(SIM_Object *object, physbam_simulation *sim);
 		bool			updateSimulatedObject(SIM_Object *object, physbam_simulation *sim);
-		HPI_TriMesh*	getTrimesh();
+		HPI_Trimesh*	getTrimesh();
 		
 	private:
-		HPI_TriMesh*	trimesh;
+		HPI_Trimesh*	trimesh;
 };
 
 #endif
