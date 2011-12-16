@@ -285,26 +285,28 @@ physbam_object*
 SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object) setting up simple ground:");
-	const SIM_Position *pos = object->getPosition();
-	UT_Vector3 t;
-	UT_Quaternion q;
-	UT_DMatrix4 m;
-	UT_Matrix3	rot;
+	const SIM_Position *sim_pos = object->getPosition();
+	UT_Vector3 		t, n;
+	UT_DMatrix4		xform;
+	UT_Matrix3		rot;
 	
-	pos->getPosition(t);
-	pos->getOrientation(q);
-	pos->getTransform(m);
+	//sim_pos->getPosition(t);
+	//sim_pos->getInverseTransform(xform);
+	sim_pos->getTransform(xform);
 	
-	m.extractRotate(rot);
-
-	UT_Vector3 n(0 ,1 ,0);
-	n = n * rot;
-	//n = n / n.length();
+	xform.extractRotate(rot);	
+	xform.getTranslates(t);
+	
+	n = UT_Vector3 (0.0f ,1.0f ,0.0f);
+	
+	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
+	n *= rot;
+	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
+	LOG("T: " << t.x() << " " << t.y() << " " << t.z());
 	
 	data_exchange::ground_plane gp;
 	gp.position = data_exchange::vf3(t.x(), t.y(), t.z());
 	gp.normal 	= data_exchange::vf3(n.x(), n.y(), n.z());
-	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
 	LOG("Done");
 	LOG_UNDENT;
 	return ir.add_object(getSimulation(0, SOLID_TYPE), &gp);
