@@ -9,9 +9,7 @@ PHYSBAM = /opt/PhysBAM-2011
 SOURCES = \
 	./SIM_PhysBAM_Commons.cpp \
     ./SIM_PhysBAM_Deformable_Solver.cpp \
-    ./SIM_PhysBAM_Fluid_Solver.cpp \
     ./SIM_PhysBAM_WorldData.cpp \
-    ./HPI_Fluid_Object.cpp \
     ./HPI_Baked_Object.cpp \
     ./HPI_Solid_Object.cpp \
     ./HPI_Object.cpp \

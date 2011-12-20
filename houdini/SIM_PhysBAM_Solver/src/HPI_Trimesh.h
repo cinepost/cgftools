@@ -19,15 +19,21 @@ class HPI_Trimesh {
 		HPI_Trimesh();
 		~HPI_Trimesh();
 	
-		bool			setFromObject(SIM_Object *object, data_exchange::deformable_body *db);
+		bool			setFromObject(SIM_Object *object);
 		//bool			setFromObject(SIM_Object *object, data_exchange::scripted_geometry *sg);
 		
-		bool			setToObject(SIM_Object *object, std::vector<data_exchange::vf3> *simulated_points);
+		bool			setToObject(SIM_Object *object, std::vector<vf3> *simulated_points);
+		
+		polygon_mesh		*getMesh();
+		std::vector<vf3>	*getPositions();
 		
 	private:
 		std::vector<hpi_trimesh_face>		faces;					// Trimesh faces
 		std::map<GEO_Point*, int>			gplist;					// GEO_Point* to GEO_PointList index relation
 		std::map<GEO_Point*, int>			points;					// GEO_Point* to PhysBAM mesh index relation
+
+		polygon_mesh 		mesh;
+		std::vector<vf3> 	positions;
 };
 
 #endif

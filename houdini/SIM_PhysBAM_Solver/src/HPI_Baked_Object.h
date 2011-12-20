@@ -24,7 +24,7 @@ class HPI_Baked_Object : public HPI_Object
 		bool			updateSimulatedObject(SIM_Object *object, physbam_simulation *sim);
 		
 	private:
-		HPI_TriMesh*	trimesh;
+		HPI_Trimesh*	trimesh;
 };
 
 #endif

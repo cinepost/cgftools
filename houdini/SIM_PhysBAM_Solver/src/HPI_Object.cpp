@@ -1,6 +1,11 @@
 #include "HPI_Object.h"
 
-HPI_Object::HPI_Object() : pb_object(0), uid(0) {
+HPI_Object::HPI_Object(){
+	uid = 0;
+	pb_object = NULL;
+}
+
+HPI_Object::~HPI_Object(){
 
 }
 

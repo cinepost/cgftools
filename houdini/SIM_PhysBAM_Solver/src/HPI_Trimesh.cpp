@@ -8,8 +8,18 @@ HPI_Trimesh::HPI_Trimesh() {
 HPI_Trimesh::~HPI_Trimesh() {
 }
 
+polygon_mesh*
+HPI_Trimesh::getMesh(){
+	return &mesh;
+}
+
+std::vector<vf3>*
+HPI_Trimesh::getPositions(){
+	return &positions;
+}
+
 bool
-HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *db){
+HPI_Trimesh::setFromObject(SIM_Object *object){
 	SIM_SopGeometry* geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
 	
 	const GU_Detail* const gdp(geometry->getGeometry().readLock());
@@ -18,7 +28,8 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 	const GEO_PointList					*p_list = &gdp->points();
 	const GEO_Primitive					*prim;
 	GEO_Point							*p;
-	
+
+	std::vector<vf3> 	position;	
 	int pb_vertex_index = 0;	
 
 	for(int i = 0; i < p_list->entries(); i++)
@@ -38,7 +49,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i1 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i1 = pb_vertex_index++;
 					}
 					
@@ -47,7 +58,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i2 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i2 = pb_vertex_index++;
 					}
 					
@@ -56,11 +67,11 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i3 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i3 = pb_vertex_index++;
 					}
 					
-					db->mesh.insert_polygon(data_exchange::vi3(i3, i2, i1));
+					 mesh.insert_polygon(vi3(i3, i2, i1));
 					break;
 				case 4:
 					p = prim->getVertex(0).getPt();
@@ -68,7 +79,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i1 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i1 = pb_vertex_index++;
 					}	
 					
@@ -77,7 +88,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i2 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i2 = pb_vertex_index++;
 					}
 					
@@ -86,7 +97,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i3 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i3 = pb_vertex_index++;
 					}
 						
@@ -95,11 +106,11 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 					if(ret.second==false){
 						i4 = ret.first->second; // this point already existed. use existing index
 					}else{
-						db->position.push_back(data_exchange::vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
+						positions.push_back(vf3(p->getPos()[0], p->getPos()[1], p->getPos()[2])); // new point. we need to store in in def body
 						i4 = pb_vertex_index++;
 					}
 					
-					db->mesh.insert_polygon(data_exchange::vi4(i4, i3, i2, i1));		
+					mesh.insert_polygon(vi4(i4, i3, i2, i1));		
 					break;
 				default:
 					std::cout << prim->getVertexCount();
@@ -112,7 +123,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object, data_exchange::deformable_body *d
 
 
 bool
-HPI_Trimesh::setToObject(SIM_Object *object, std::vector<data_exchange::vf3> *simulated_points){
+HPI_Trimesh::setToObject(SIM_Object *object, std::vector<vf3> *simulated_points){
 	/// Get the object's last state before this time step
 	SIM_GeometryCopy *geometry_copy = SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE);	
 

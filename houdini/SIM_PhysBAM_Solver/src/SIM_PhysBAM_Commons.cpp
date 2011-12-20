@@ -1,6 +1,5 @@
 #include <UT/UT_DSOVersion.h>
 #include "SIM_PhysBAM_Deformable_Solver.h"
-#include "SIM_PhysBAM_Fluid_Solver.h"
 #include "SIM_PhysBAM_WorldData.h"
 
 #include "SIM_PhysBAM_Commons.h"
@@ -15,7 +14,6 @@ bool   PB_LIB_READY	= false;
 void
 initializeSIM(void *){
 	srand((unsigned)time(0));
-	IMPLEMENT_DATAFACTORY(SIM_PhysBAM_Fluid_Solver);
 	IMPLEMENT_DATAFACTORY(SIM_PhysBAM_Deformable_Solver);
     IMPLEMENT_DATAFACTORY(SIM_PhysBAM_WorldData);
     
@@ -34,8 +32,8 @@ initializeSIM(void *){
 		PB_LIB_READY = true;
 		
 		ir.physbam_init();
-		ir.set_string(0, ir.get_id(0, "playback_log"), "main.log");
-		ir.set_int(0, ir.get_id(0, "enable_cout_logging"), 0);
+		ir.call<void>("set_playback_log", "/home/max/main.log");
+		//ir.call<int>("set_enable_cout_logging", 0);
 	}
 	std::cout << "initializeSIM called." << std::endl;
 };

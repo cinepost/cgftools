@@ -30,48 +30,45 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	
 	float		mass 				= 10.0;
 	float 		stiffness 			= 1e3;
-	float 		damping 			= .01;
-	int			friction			= 1;
+	float 		damping 			= .01f;
+	float		friction			= 0.0f;
 	int 		approx_number_cells = 100;
 	UT_Vector3	velocity 			= UT_Vector3(0.0f,0.0f,0.0f);
 	UT_Vector3	angular_velocity 	= UT_Vector3(0.0f,0.0f,0.0f);
 	UT_Vector3	angular_center 		= UT_Vector3(0.0f,0.0f,0.0f);
 			
-	bool	deformable			= true;
-	
 	LOG("Fetching options from PhysBAM_Body object data.");
 	const SIM_Options *data = &body_data->getData();
 	if(data){		
 		if(data->hasOption("mass"))mass = data->getOptionF("mass");
 		if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
 		if(data->hasOption("damping"))damping = data->getOptionF("damping");
-		if(data->hasOption("friction"))friction = data->getOptionI("friction");
+		if(data->hasOption("friction"))friction = data->getOptionF("friction");
 		if(data->hasOption("approx_number_of_cells"))approx_number_cells = data->getOptionI("approx_number_of_cells");
 		if(data->hasOption("velocity"))velocity = data->getOptionV3("velocity");
 		if(data->hasOption("angular_velocity"))angular_velocity = data->getOptionV3("angular_velocity");
 		if(data->hasOption("angular_center"))angular_center = data->getOptionV3("angular_center");	
 	}
-	data_exchange::deformable_body 	db;
 	
 	LOG("Setting trimesh from SIM_Object...");
-	trimesh->setFromObject(object, &db);
+	trimesh->setFromObject(object);
 	LOG("Done.");
-
-	db.mass 				= mass;
-	db.approx_number_cells 	= approx_number_cells;
-	db.velocity 			= data_exchange::vf3(velocity.x(),velocity.y(),velocity.z());
-	db.angular_velocity 	= data_exchange::vf3(angular_velocity.x(),angular_velocity.y(),angular_velocity.z());
-	db.angular_center 		= data_exchange::vf3(angular_center.x(),angular_center.y(),angular_center.z());
 	
 	LOG("Adding deformable body to simulation...");
-	pb_object = ir.add_object(sim, &db);
+	pb_object = ir.call<physbam_object*>("add_deformable_body", sim, *trimesh->getMesh(), *trimesh->getPositions(), friction , approx_number_cells);
+	ir.call<void>("set_deformable_object_rigid_motion", pb_object, 
+		vf3(velocity.x(),velocity.y(),velocity.z()), 
+		vf3(angular_velocity.x(),angular_velocity.y(),angular_velocity.z()),
+		vf3(angular_center.x(),angular_center.y(),angular_center.z()));
 	LOG("Done.");
 	
 	if(!pb_object)
 		return false;
 			
-	/// Setup friciton
-	//ir.set_float(pb_object, ir.get_id(pb_object, "rigid_body_friction"), friction);		
+	/// Create volume force for deformable body
+	physbam_force	*f1 = ir.call<physbam_force*>("add_volumetric_force", sim, stiffness, mass, damping);
+	ir.call<void>("apply_force_to_object", pb_object, f1); 		
+			
 			
 	/// Now create constraints
 	/*
@@ -114,24 +111,16 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	//}
 	*/                
 					
-	/// Create volume force for deformable body
-	data_exchange::volumetric_force vf;
-	vf.stiffness 		= stiffness;
-	vf.damping 			= damping;
-	physbam_force	*f1	= ir.add_force(sim, &vf);
-	ir.apply_force_to_object(pb_object, f1);
-	
 	return true;
 }
 
 bool
 HPI_Solid_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *sim){	
 	if(pb_object){
-		int xid = ir.get_id(pb_object, "position");
-		int len = ir.get_vf3_array_length(pb_object, xid);
-		std::vector<data_exchange::vf3> pos_array(len);
-		ir.get_vf3_array(pb_object, xid, &pos_array[0], len, 0);
-			
+		int len = ir.call<int>("size_position", pb_object);
+		std::vector<vf3> pos_array(len);
+        raw_array<vf3> ra(pos_array);
+        ir.call<void>("get_position", pb_object, &ra);			
 		trimesh->setToObject(object, &pos_array);
 		return true;
 	}

@@ -31,9 +31,14 @@ bool SIM_PhysBAM_Deformable_Solver::setupNewSimObject(physbam_simulation* sim, S
 	LOG(object->getName() << " id: " << object->getObjectId());
 	
 	physbam_object* pb_object = worlddata->addNewObject(object, time);
+	if(pb_object){
+		LOG("Done.");
+		LOG_UNDENT;
+		return true;		
+	}
 	LOG("Done.");
 	LOG_UNDENT;
-	return true;	
+	return false;	
 }
 
 bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
@@ -69,7 +74,7 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 	int						i;
 	const SIM_Time 			curr_time = engine.getSimulationTime();
 	
-	sim = worlddata->getSimulation(0, SOLID_TYPE);
+	sim = worlddata->getSimulation();
 	/// Loop through new objects and add them into sim.
 	if (newobjects.entries() > 0) {
 		LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new objects in sim:");	
@@ -86,7 +91,7 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 	
 	/// Run the simulation for the given time_step
 	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() running ir.simulate_frame with sim:" << sim << " and timestep: " << timestep);	
-	ir.simulate_frame(sim, timestep);
+	ir.call<void>("simulate_frame", sim, (float)timestep);
 	LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() simulated.");	
 	
 	/// Update all the objects
