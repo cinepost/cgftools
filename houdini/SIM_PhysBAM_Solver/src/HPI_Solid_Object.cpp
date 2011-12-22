@@ -55,7 +55,7 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	LOG("Done.");
 	
 	LOG("Adding deformable body to simulation...");
-	pb_object = ir.call<physbam_object*>("add_deformable_body", sim, *trimesh->getMesh(), *trimesh->getPositions(), friction , approx_number_cells);
+	pb_object = ir.call<physbam_object*>("add_deformable_body", sim, *trimesh->getMesh(), *trimesh->getPositions(), mass , approx_number_cells);
 	ir.call<void>("set_deformable_object_rigid_motion", pb_object, 
 		vf3(velocity.x(),velocity.y(),velocity.z()), 
 		vf3(angular_velocity.x(),angular_velocity.y(),angular_velocity.z()),
@@ -66,7 +66,7 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 		return false;
 			
 	/// Create volume force for deformable body
-	physbam_force	*f1 = ir.call<physbam_force*>("add_volumetric_force", sim, stiffness, mass, damping);
+	physbam_force	*f1 = ir.call<physbam_force*>("add_volumetric_force", sim, stiffness, 0.45f, damping);
 	ir.call<void>("apply_force_to_object", pb_object, f1); 		
 			
 			
