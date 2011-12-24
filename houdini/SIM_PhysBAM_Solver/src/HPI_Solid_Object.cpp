@@ -28,10 +28,10 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 		return false;
 	}
 	
+	float 		poisson				= 0.45f;
 	float		mass 				= 10.0;
 	float 		stiffness 			= 1e3;
 	float 		damping 			= .01f;
-	float		friction			= 0.0f;
 	int 		approx_number_cells = 100;
 	UT_Vector3	velocity 			= UT_Vector3(0.0f,0.0f,0.0f);
 	UT_Vector3	angular_velocity 	= UT_Vector3(0.0f,0.0f,0.0f);
@@ -40,10 +40,10 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	LOG("Fetching options from PhysBAM_Body object data.");
 	const SIM_Options *data = &body_data->getData();
 	if(data){		
+		if(data->hasOption("poisson"))poisson = data->getOptionF("poisson");
 		if(data->hasOption("mass"))mass = data->getOptionF("mass");
 		if(data->hasOption("stiffness"))stiffness = data->getOptionF("stiffness");
 		if(data->hasOption("damping"))damping = data->getOptionF("damping");
-		if(data->hasOption("friction"))friction = data->getOptionF("friction");
 		if(data->hasOption("approx_number_of_cells"))approx_number_cells = data->getOptionI("approx_number_of_cells");
 		if(data->hasOption("velocity"))velocity = data->getOptionV3("velocity");
 		if(data->hasOption("angular_velocity"))angular_velocity = data->getOptionV3("angular_velocity");
@@ -66,9 +66,8 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 		return false;
 			
 	/// Create volume force for deformable body
-	physbam_force	*f1 = ir.call<physbam_force*>("add_volumetric_force", sim, stiffness, 0.45f, damping);
-	ir.call<void>("apply_force_to_object", pb_object, f1); 		
-			
+	physbam_force	*f1 = ir.call<physbam_force*>("add_volumetric_force", sim, stiffness, poisson, damping);
+	ir.call<void>("apply_force_to_object", pb_object, f1);	
 			
 	/// Now create constraints
 	/*

@@ -229,10 +229,14 @@ SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object){
 	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
 	LOG("T: " << t.x() << " " << t.y() << " " << t.z());
 	
-	float friction = 0.0f;
+	float friction = 0.5f;
 	SIM_PhysicalParms	*ground_object = SIM_DATA_CAST(object->getNamedSubData("SIM_PhysicalParms"), SIM_PhysicalParms);
-	if(ground_object)
+	if(ground_object){
 		friction = ground_object->getProperty( SIM_PROPERTY_FRICTION);
+		LOG("Friction: " << friction);
+	}else{
+		LOG("Using default friction: " << friction);
+	}
 	
 	physbam_object* gr = ir.call<physbam_object*>("add_ground", getSimulation(), vf3(t.x(), t.y(), t.z()), vf3(n.x(), n.y(), n.z()));
 	ir.call<void>("set_rigid_body_friction", gr, friction);
