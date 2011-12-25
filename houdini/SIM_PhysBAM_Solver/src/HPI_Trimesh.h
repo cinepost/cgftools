@@ -9,6 +9,7 @@
 #include <SIM/SIM_Object.h>
 #include <SIM/SIM_GeometryCopy.h>
 #include <SIMZ/SIM_SopGeometry.h>
+#include <SIM/SIM_Position.h>
 
 #include "logtools.h"
 
@@ -19,9 +20,7 @@ class HPI_Trimesh {
 		HPI_Trimesh();
 		~HPI_Trimesh();
 	
-		bool			setFromObject(SIM_Object *object);
-		//bool			setFromObject(SIM_Object *object, data_exchange::scripted_geometry *sg);
-		
+		bool			setFromObject(SIM_Object *object);	
 		bool			setToObject(SIM_Object *object, std::vector<vf3> *simulated_points);
 		
 		polygon_mesh		*getMesh();

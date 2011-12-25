@@ -25,7 +25,7 @@ SIM_PhysBAM_WorldData::getForce(int id){
 	return forces->find(id)->second;
 }
 
-HPI_Solid_Object*
+HPI_Object*
 SIM_PhysBAM_WorldData::getSolidObject(int id){
 	return solid_objects->find(id)->second;
 }
@@ -92,7 +92,7 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	simulation		= NULL;
 	objects			= new std::map<int, physbam_object*>();
 	forces			= new std::map<int, physbam_force*>();
-	solid_objects	= new std::map<int, HPI_Solid_Object*>();
+	solid_objects	= new std::map<int, HPI_Object*>();
 	m_shareCount	= new int(1);
 	//LOG("Done");
 	//LOG_UNDENT;
@@ -128,7 +128,7 @@ void SIM_PhysBAM_WorldData::clear(){
 				ir.call<void>("destroy_simulation", simulation);
 			}
 			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second; };objects->clear();
-			for ( typename std::map<int, HPI_Solid_Object*>::iterator it = solid_objects->begin(); it != solid_objects->end(); ++it ){delete it->second;};solid_objects->clear();
+			for ( typename std::map<int, HPI_Object*>::iterator it = solid_objects->begin(); it != solid_objects->end(); ++it ){delete it->second;};solid_objects->clear();
 			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
 
 			delete 	m_shareCount;
@@ -194,9 +194,13 @@ SIM_PhysBAM_WorldData::addNewObject(SIM_Object *object, SIM_Time time){
 		if(volume){
 			LOG("Adding volumetric object...");
 			if( volume->getMode() == 4){
-					LOG("Done");
-					LOG_UNDENT;
+				LOG("Done");
+				LOG_UNDENT;
 				return addNewGroundObject(object);	
+			}else if( volume->getMode() == 0){
+				LOG("Done");
+				LOG_UNDENT;
+				return addNewBakedObject(object);					
 			}
 		}
 		LOG("Done");
@@ -297,7 +301,25 @@ SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
 			}
 		}
 		/// Add id-object pair 
-		solid_objects->insert( std::pair<int, HPI_Solid_Object*>(obj->getUid(), obj));
+		solid_objects->insert( std::pair<int, HPI_Object*>(obj->getUid(), obj));
+		LOG("Done");
+		LOG_UNDENT;
+		return obj->getPhysbamObject();
+	}
+	LOG("Done");
+	LOG_UNDENT;
+	return 0;	
+}
+
+physbam_object*
+SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object){
+	LOG_INDENT;
+	LOG("SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object) setting up scripted object:");	
+	HPI_Baked_Object	*obj = new HPI_Baked_Object();
+	if( obj->setFromObject(object, getSimulation())){	
+
+		/// Add id-object pair 
+		solid_objects->insert( std::pair<int, HPI_Object*>(obj->getUid(), obj));
 		LOG("Done");
 		LOG_UNDENT;
 		return obj->getPhysbamObject();

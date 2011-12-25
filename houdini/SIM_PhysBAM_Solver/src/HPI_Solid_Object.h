@@ -11,6 +11,7 @@
 #include <SIM/SIM_ConAnchorSpatial.h>
 #include <SIM/SIM_ConAnchorRotational.h>
 #include <SIM/SIM_ConRel.h>
+#include <SIM/SIM_Position.h>
 #include "HPI_Object.h"
 #include "HPI_Trimesh.h"
 
@@ -21,7 +22,7 @@ class HPI_Solid_Object : public HPI_Object
 		~HPI_Solid_Object();
 	
 		bool			setFromObject(SIM_Object *object, physbam_simulation *sim);
-		bool			updateSimulatedObject(SIM_Object *object, physbam_simulation *sim);
+		virtual bool	updateSimulatedObject(SIM_Object *object, physbam_simulation *sim);
 		HPI_Trimesh*	getTrimesh();
 		
 	private:

@@ -21,9 +21,16 @@ HPI_Trimesh::getPositions(){
 bool
 HPI_Trimesh::setFromObject(SIM_Object *object){
 	SIM_SopGeometry* geometry = SIM_DATA_CAST(object->getNamedSubData("Geometry"), SIM_SopGeometry);
+
+	const SIM_Position *sim_pos = object->getPosition();
+	UT_DMatrix4		xform;
+	sim_pos->getTransform(xform);
+	const UT_Matrix4	c_xform(xform);
 	
-	const GU_Detail* const gdp(geometry->getGeometry().readLock());
-	
+	const GU_Detail* const sgdp(geometry->getGeometry().readLock());
+	GU_Detail* gdp = new GU_Detail(sgdp);
+	gdp->transform(c_xform);
+		
 	LOG("Fetched gdp from object is:"  << gdp);
 	const GEO_PointList					*p_list = &gdp->points();
 	const GEO_Primitive					*prim;
@@ -118,6 +125,7 @@ HPI_Trimesh::setFromObject(SIM_Object *object){
 			}
 		}
 	}
+	delete gdp;
 	return true;
 }
 

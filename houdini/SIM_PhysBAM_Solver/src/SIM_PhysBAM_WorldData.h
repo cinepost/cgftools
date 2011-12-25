@@ -3,6 +3,7 @@
 
 #include "SIM_PhysBAM_Commons.h"
 #include "HPI_Solid_Object.h"
+#include "HPI_Baked_Object.h"
 
 #include <iostream>
 #include <map>
@@ -55,7 +56,7 @@ public:
 	std::map<int, physbam_object*>		*getObjects();
 	std::map<int, physbam_force*>		*getForces();
 	physbam_force						*getForce(int id);
-	HPI_Solid_Object					*getSolidObject(int id);
+	HPI_Object							*getSolidObject(int id);
 	bool								objectExists(int id);
 	bool								forceExists(int id);
 	bool								fluidObjectExists(int id);
@@ -64,6 +65,7 @@ public:
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);
 	physbam_object						*addNewSolidObject(SIM_Object *object);
+	physbam_object						*addNewBakedObject(SIM_Object *object);	
 	physbam_object						*addNewGroundObject(SIM_Object *object);
 	
 	physbam_simulation					*getSimulation();
@@ -94,7 +96,7 @@ public:
 	physbam_simulation					*simulation;
 	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
-	std::map<int, HPI_Solid_Object*>	*solid_objects;
+	std::map<int, HPI_Object*>			*solid_objects;
 	int									*m_shareCount;
 };
 

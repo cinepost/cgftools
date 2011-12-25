@@ -27,7 +27,7 @@ HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 		LOG("HPI_Solid_Object::setFromObject(SIM_Object *object, physbam_simulation *sim) no PhysBAM_Body data found on object:" << uid);
 		return false;
 	}
-	
+
 	float 		poisson				= 0.45f;
 	float		mass 				= 10.0;
 	float 		stiffness 			= 1e3;
