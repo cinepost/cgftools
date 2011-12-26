@@ -26,9 +26,12 @@ HPI_Trimesh::setFromObject(SIM_Object *object){
 	UT_DMatrix4		xform;
 	sim_pos->getTransform(xform);
 	const UT_Matrix4	c_xform(xform);
+	geometry->getTransform(xform);
+	const UT_Matrix4	o_xform(xform);
 	
 	const GU_Detail* const sgdp(geometry->getGeometry().readLock());
 	GU_Detail* gdp = new GU_Detail(sgdp);
+	gdp->transform(o_xform);
 	gdp->transform(c_xform);
 		
 	LOG("Fetched gdp from object is:"  << gdp);
@@ -150,6 +153,17 @@ HPI_Trimesh::setToObject(SIM_Object *object, std::vector<vf3> *simulated_points)
 			
 			pt->setPos(simulated_points->at(pb_index).data[0], simulated_points->at(pb_index).data[1], simulated_points->at(pb_index).data[2], 1);
 		}
+		
+		const SIM_Position *sim_pos = object->getPosition();
+		UT_DMatrix4		xform;
+		sim_pos->getInverseTransform(xform);
+		const UT_Matrix4	c_xform(xform);
+		object->getGeometry()->getTransform(xform);
+		xform.invert();
+		const UT_Matrix4	o_xform(xform);
+		
+		gdl.getGdp()->transform(c_xform);
+		gdl.getGdp()->transform(o_xform);
 		geometry_copy->releaseGeometry(); /// Store the integrated simulation state in geometry_copy
 		return true;
 	}

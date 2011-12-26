@@ -36,17 +36,12 @@ SIM_PhysBAM_WorldData::getForces(void){
 }
 
 bool
-SIM_PhysBAM_WorldData::objectExists(int id){
-	return objects->find( id ) != objects->end();
-}
-
-bool
 SIM_PhysBAM_WorldData::forceExists(int id){
 	return forces->find( id ) != forces->end();
 }
 
 bool
-SIM_PhysBAM_WorldData::solidObjectExists(int id){
+SIM_PhysBAM_WorldData::objectExists(int id){
 	return solid_objects->find( id ) != solid_objects->end();
 }
 
@@ -172,8 +167,6 @@ SIM_PhysBAM_WorldData::addNewForce(const SIM_Data *force){
 		
 		pb_force = ir.call<physbam_force*>("add_gravity", getSimulation(), dir);
 		
-		//ir.call<void>("set_gravity", f2, dir);
-		
 	}else{
 		LOG("Skipping unsupported force: " << force_type);
 	}
@@ -266,8 +259,10 @@ SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
 			for(int i = 0; i < objects.entries(); i++){
 				obj = (SIM_Object*)objects(i);
 				if(object->getObjectId() != obj->getObjectId()){
-					LOG("Setup affector: " << obj->getName());
-					addNewObject(obj, 0);
+					if(!objectExists(obj->getObjectId())){
+						LOG("Setup affector: " << obj->getName());
+						addNewObject(obj, 0);
+					}
 				}
 			}
 		}
@@ -301,7 +296,7 @@ SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
 			}
 		}
 		/// Add id-object pair 
-		solid_objects->insert( std::pair<int, HPI_Object*>(obj->getUid(), obj));
+		solid_objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
 		LOG("Done");
 		LOG_UNDENT;
 		return obj->getPhysbamObject();
@@ -319,7 +314,7 @@ SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object){
 	if( obj->setFromObject(object, getSimulation())){	
 
 		/// Add id-object pair 
-		solid_objects->insert( std::pair<int, HPI_Object*>(obj->getUid(), obj));
+		solid_objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
 		LOG("Done");
 		LOG_UNDENT;
 		return obj->getPhysbamObject();

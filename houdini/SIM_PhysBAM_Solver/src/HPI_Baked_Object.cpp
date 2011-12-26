@@ -21,23 +21,6 @@ HPI_Baked_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	LOG("HPI_Baked_Object::setFromObject(SIM_Object *object, physbam_simulation *sim) called.");
 	uid = object->getObjectId();
 	
-	const SIM_Position *sim_pos = object->getPosition();
-	UT_Vector3 		t, n;
-	UT_DMatrix4		xform;
-	UT_Matrix3		rot;
-	
-	sim_pos->getTransform(xform);
-	
-	xform.extractRotate(rot);	
-	xform.getTranslates(t);
-	
-	n = UT_Vector3 (0.0f ,1.0f ,0.0f);
-	
-	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
-	n *= rot;
-	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
-	LOG("T: " << t.x() << " " << t.y() << " " << t.z());	
-	
 	LOG("Setting trimesh from SIM_Object...");
 	trimesh->setFromObject(object);
 	LOG("Done.");

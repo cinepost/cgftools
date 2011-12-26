@@ -60,7 +60,6 @@ public:
 	bool								objectExists(int id);
 	bool								forceExists(int id);
 	bool								fluidObjectExists(int id);
-	bool								solidObjectExists(int id);
 	
 	physbam_force						*addNewForce(const SIM_Data *force);
 	physbam_object						*addNewObject(SIM_Object *object, SIM_Time time);

@@ -82,14 +82,16 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 		
 		sim = worlddata->getSimulation();
 		/// Loop through new objects and add them into sim.
-		if (newobjects.entries() > 0) {
-			LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new objects in sim:");	
-			for( i = 0; i < newobjects.entries(); i++ ){	
-		    	if(!setupNewSimObject(sim, newobjects(i), curr_time)){
-					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
-					LOG_UNDENT;
-					boss->opEnd();
-					return SIM_Solver::SIM_SOLVER_FAIL;
+		if (newobjects.entries() > 0) {	
+			for( i = 0; i < newobjects.entries(); i++ ){
+				if(!worlddata->objectExists(newobjects(i)->getObjectId())){
+					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new object in sim: " << newobjects(i)->getName());	
+					if(!setupNewSimObject(sim, newobjects(i), curr_time)){
+						LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable set up new object:" << newobjects(i)->getName());
+						LOG_UNDENT;
+						boss->opEnd();
+						return SIM_Solver::SIM_SOLVER_FAIL;
+					}
 				}
 			}
 			/// exit with success. we don't want to run actual simulation here
