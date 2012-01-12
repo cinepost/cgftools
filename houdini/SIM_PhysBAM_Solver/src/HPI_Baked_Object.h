@@ -21,7 +21,7 @@ class HPI_Baked_Object : public HPI_Object
 		HPI_Baked_Object();
 		~HPI_Baked_Object();
 	
-		bool			setFromObject(SIM_Object *object, physbam_simulation *sim);
+		virtual	bool	setFromObject(SIM_Object *object, physbam_simulation *sim);
 		virtual bool	updateSimulatedObject(SIM_Object *object, physbam_simulation *sim);
 		HPI_Trimesh*	getTrimesh();
 		

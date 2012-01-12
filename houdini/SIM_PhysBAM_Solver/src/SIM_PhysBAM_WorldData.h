@@ -4,6 +4,7 @@
 #include "SIM_PhysBAM_Commons.h"
 #include "HPI_Solid_Object.h"
 #include "HPI_Baked_Object.h"
+#include "HPI_Ground_Object.h"
 
 #include <iostream>
 #include <map>
@@ -53,7 +54,6 @@
 class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
-	std::map<int, physbam_object*>		*getObjects();
 	std::map<int, physbam_force*>		*getForces();
 	physbam_force						*getForce(int id);
 	HPI_Object							*getSolidObject(int id);
@@ -93,9 +93,8 @@ private:
 
 public:
 	physbam_simulation					*simulation;
-	std::map<int, physbam_object*>		*objects;
 	std::map<int, physbam_force*>		*forces;
-	std::map<int, HPI_Object*>			*solid_objects;
+	std::map<int, HPI_Object*>			*objects;
 	int									*m_shareCount;
 };
 

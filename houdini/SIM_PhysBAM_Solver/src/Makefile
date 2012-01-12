@@ -12,6 +12,7 @@ SOURCES = \
     ./SIM_PhysBAM_WorldData.cpp \
     ./HPI_Baked_Object.cpp \
     ./HPI_Solid_Object.cpp \
+	./HPI_Ground_Object.cpp \
     ./HPI_Object.cpp \
     ./HPI_Trimesh.cpp
 

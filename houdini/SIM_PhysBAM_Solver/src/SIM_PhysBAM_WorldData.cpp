@@ -7,17 +7,12 @@ extern interface_routines ir;
 #include "logtools.h"
 
 SIM_PhysBAM_WorldData::SIM_PhysBAM_WorldData(const SIM_DataFactory *factory) : SIM_Data(factory),
-	simulation(NULL), objects(0), solid_objects(0), forces(0), m_shareCount(0){
+	simulation(NULL), objects(0), forces(0), m_shareCount(0){
 
 };
 
 SIM_PhysBAM_WorldData::~SIM_PhysBAM_WorldData(){ 
 	clear();
-};
-
-std::map<int, physbam_object*>* 
-SIM_PhysBAM_WorldData::getObjects(void){
-	return objects;
 };
 
 physbam_force*
@@ -27,7 +22,7 @@ SIM_PhysBAM_WorldData::getForce(int id){
 
 HPI_Object*
 SIM_PhysBAM_WorldData::getSolidObject(int id){
-	return solid_objects->find(id)->second;
+	return objects->find(id)->second;
 }
 
 std::map<int, physbam_force*>*
@@ -42,7 +37,7 @@ SIM_PhysBAM_WorldData::forceExists(int id){
 
 bool
 SIM_PhysBAM_WorldData::objectExists(int id){
-	return solid_objects->find( id ) != solid_objects->end();
+	return objects->find( id ) != objects->end();
 }
 
 physbam_simulation* 
@@ -85,9 +80,8 @@ void SIM_PhysBAM_WorldData::initializeSubclass(){
 	//LOG("SIM_PhysBAM_WorldData::initializeSubclass() called.");
 	clear();
 	simulation		= NULL;
-	objects			= new std::map<int, physbam_object*>();
 	forces			= new std::map<int, physbam_force*>();
-	solid_objects	= new std::map<int, HPI_Object*>();
+	objects			= new std::map<int, HPI_Object*>();
 	m_shareCount	= new int(1);
 	//LOG("Done");
 	//LOG_UNDENT;
@@ -102,7 +96,6 @@ void SIM_PhysBAM_WorldData::makeEqualSubclass(const SIM_Data *src){
 		clear();
 		simulation		= world->simulation;
 		objects 		= world->objects;
-		solid_objects 	= world->solid_objects;
 		forces 			= world->forces;						
 		m_shareCount 	= world->m_shareCount;
 		(*m_shareCount)++;
@@ -122,8 +115,7 @@ void SIM_PhysBAM_WorldData::clear(){
 				LOG("SIM_PhysBAM_WorldData::clear() destroying sim: " << simulation);
 				ir.call<void>("destroy_simulation", simulation);
 			}
-			for ( typename std::map<int, physbam_object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second; };objects->clear();
-			for ( typename std::map<int, HPI_Object*>::iterator it = solid_objects->begin(); it != solid_objects->end(); ++it ){delete it->second;};solid_objects->clear();
+			for ( typename std::map<int, HPI_Object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second;};objects->clear();
 			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
 
 			delete 	m_shareCount;
@@ -132,7 +124,6 @@ void SIM_PhysBAM_WorldData::clear(){
 	simulation		= NULL;
 	objects			= NULL;
 	forces			= NULL;
-	solid_objects 	= NULL;
 	m_shareCount 	= 0;
 	//LOG("Done");
 	//LOG_UNDENT;	
@@ -209,38 +200,19 @@ physbam_object*
 SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object){
 	LOG_INDENT;
 	LOG("SIM_PhysBAM_WorldData::addNewGroundObject(SIM_Object *object) setting up simple ground:");
-	const SIM_Position *sim_pos = object->getPosition();
-	UT_Vector3 		t, n;
-	UT_DMatrix4		xform;
-	UT_Matrix3		rot;
-	
-	sim_pos->getTransform(xform);
-	
-	xform.extractRotate(rot);	
-	xform.getTranslates(t);
-	
-	n = UT_Vector3 (0.0f ,1.0f ,0.0f);
-	
-	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
-	n *= rot;
-	LOG("N: " << n.x() << " " << n.y() << " " << n.z());
-	LOG("T: " << t.x() << " " << t.y() << " " << t.z());
-	
-	float friction = 0.5f;
-	SIM_PhysicalParms	*ground_object = SIM_DATA_CAST(object->getNamedSubData("SIM_PhysicalParms"), SIM_PhysicalParms);
-	if(ground_object){
-		friction = ground_object->getProperty( SIM_PROPERTY_FRICTION);
-		LOG("Friction: " << friction);
-	}else{
-		LOG("Using default friction: " << friction);
+	HPI_Ground_Object	*obj = new HPI_Ground_Object();
+	if( obj->setFromObject(object, getSimulation())){
+		/// Add id-object pair 
+		objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
+		
+		LOG("Done");
+		LOG_UNDENT;
+		return obj->getPhysbamObject();
 	}
-	
-	physbam_object* gr = ir.call<physbam_object*>("add_ground", getSimulation(), vf3(t.x(), t.y(), t.z()), vf3(n.x(), n.y(), n.z()));
-	ir.call<void>("set_rigid_body_friction", gr, friction);
 	
 	LOG("Done");
 	LOG_UNDENT;
-	return gr;
+	return 0;
 }
 
 physbam_object*
@@ -249,19 +221,27 @@ SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
 	LOG("SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object) setting up solid object:");	
 	HPI_Solid_Object	*obj = new HPI_Solid_Object();
 	if( obj->setFromObject(object, getSimulation())){
+
+		/// Add id-object pair 
+		objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
+
 		/// Add affector objects
-		SIM_ObjectArray		objects;		
-		object->getAffectors(objects, "SIM_RelationshipCollide");
+		SIM_ObjectArray		sim_objects, filtered;
+		object->getAffectors(sim_objects, "SIM_RelationshipCollide");
+		sim_objects.filter(SIM_DataFilterByType("SIM_Object"), filtered);	/// we want to process only certain types of objects here
 		
-		if(objects.entries() > 0){
-			LOG("Setting up " << objects.entries() << " affectors...");
-			SIM_Object *obj;
-			for(int i = 0; i < objects.entries(); i++){
-				obj = (SIM_Object*)objects(i);
-				if(object->getObjectId() != obj->getObjectId()){
-					if(!objectExists(obj->getObjectId())){
-						LOG("Setup affector: " << obj->getName());
-						addNewObject(obj, 0);
+		if(filtered.entries() > 0){
+			LOG("Setting up " << filtered.entries() << " affectors...");
+			
+			SIM_Object *sim_obj;
+			for(int i = 0; i < filtered.entries(); i++){
+				
+				sim_obj = (SIM_Object*)filtered(i);
+				if(object->getObjectId() != sim_obj->getObjectId()){
+					if(!objectExists(sim_obj->getObjectId())){
+						
+						LOG("Setup affector: " << sim_obj->getName());
+						addNewObject(sim_obj, 0);
 					}
 				}
 			}
@@ -295,8 +275,7 @@ SIM_PhysBAM_WorldData::addNewSolidObject(SIM_Object *object){
 					ir.call<void>("apply_force_to_object", obj->getPhysbamObject(), pb_force);	
 			}
 		}
-		/// Add id-object pair 
-		solid_objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
+
 		LOG("Done");
 		LOG_UNDENT;
 		return obj->getPhysbamObject();
@@ -314,7 +293,7 @@ SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object){
 	if( obj->setFromObject(object, getSimulation())){	
 
 		/// Add id-object pair 
-		solid_objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
+		objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
 		LOG("Done");
 		LOG_UNDENT;
 		return obj->getPhysbamObject();
