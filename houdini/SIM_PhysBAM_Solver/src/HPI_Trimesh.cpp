@@ -138,6 +138,7 @@ HPI_Trimesh::setToObject(SIM_Object *object, std::vector<vf3> *simulated_points)
 	/// Get the object's last state before this time step
 	SIM_GeometryCopy *geometry_copy = SIM_DATA_CREATE(*object, SIM_GEOMETRY_DATANAME, SIM_GeometryCopy, SIM_DATA_RETURN_EXISTING | SIM_DATA_ADOPT_EXISTING_ON_DELETE);	
 
+	std::cout << "Updating geometry copy for object \"" << object->getName() << "\"" <<std::endl;
 	if(geometry_copy){
 		GU_DetailHandleAutoWriteLock	gdl(geometry_copy->lockGeometry());
 		GEO_PointList					*p_list = &gdl.getGdp()->points();

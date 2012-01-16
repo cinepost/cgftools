@@ -20,8 +20,8 @@ class HPI_Trimesh {
 		HPI_Trimesh();
 		~HPI_Trimesh();
 	
-		bool			setFromObject(SIM_Object *object);	
-		bool			setToObject(SIM_Object *object, std::vector<vf3> *simulated_points);
+		bool				setFromObject(SIM_Object *object);	
+		bool				setToObject(SIM_Object *object, std::vector<vf3> *simulated_points);
 		
 		polygon_mesh		*getMesh();
 		std::vector<vf3>	*getPositions();

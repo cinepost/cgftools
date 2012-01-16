@@ -291,7 +291,6 @@ SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object){
 	LOG("SIM_PhysBAM_WorldData::addNewBakedObject(SIM_Object *object) setting up scripted object:");	
 	HPI_Baked_Object	*obj = new HPI_Baked_Object();
 	if( obj->setFromObject(object, getSimulation())){	
-
 		/// Add id-object pair 
 		objects->insert( std::pair<int, HPI_Object*>(object->getObjectId(), obj));
 		LOG("Done");

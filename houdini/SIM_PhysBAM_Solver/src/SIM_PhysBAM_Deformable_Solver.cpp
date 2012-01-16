@@ -106,13 +106,16 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 		
 		/// Update all the objects
 		if (objects.entries() > 0){
-			LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating objects in sim:");
+			LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating objects in sim: " << sim);
 			for( i = 0; i < objects.entries(); i++ ){ 
+				LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating object \"" << objects(i)->getName() << "\"");
 		    	if(!updateSimObject(sim, objects(i))){
-					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable update object:" << objects(i)->getName());
+					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable update object \"" << objects(i)->getName() << "\"");
 					LOG_UNDENT;
 					boss->opEnd();
 					return SIM_Solver::SIM_SOLVER_FAIL;
+				}else{
+					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() object \"" << objects(i)->getName() << "\" updated successfully !!!");
 				}  
 			}	
 		}
