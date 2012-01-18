@@ -36,6 +36,6 @@ HPI_Baked_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 }
 
 bool
-HPI_Baked_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *sim){
+HPI_Baked_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *sim, const SIM_Time &timestep){
 	return true;
 }

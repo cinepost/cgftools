@@ -69,7 +69,7 @@ protected:
 	SIM_Solver::SIM_Result 	solveObjectsSubclass (SIM_Engine &engine, SIM_ObjectArray &objects, SIM_ObjectArray &newobjects, SIM_ObjectArray &feedbacktoobjects, const SIM_Time &timestep);
 	
 	bool					setupNewSimObject(physbam_simulation* sim, SIM_Object* object, SIM_Time time);
-	bool					updateSimObject(physbam_simulation* sim, SIM_Object* object);		
+	bool					updateSimObject(physbam_simulation* sim, SIM_Object* object, const SIM_Time &timestep);		
 		
 private:
 	SIM_PhysBAM_WorldData 	*worlddata;

@@ -42,8 +42,8 @@ bool SIM_PhysBAM_Deformable_Solver::setupNewSimObject(physbam_simulation* sim, S
 	return false;	
 }
 
-bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object){
-	bool result = worlddata->getSolidObject(object->getObjectId())->updateSimulatedObject(object, sim);
+bool SIM_PhysBAM_Deformable_Solver::updateSimObject(physbam_simulation* sim, SIM_Object* object, const SIM_Time &timestep){
+	bool result = worlddata->getSolidObject(object->getObjectId())->updateSimulatedObject(object, sim, timestep);
 	return result;
 }
 	
@@ -109,7 +109,7 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 			LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating objects in sim: " << sim);
 			for( i = 0; i < objects.entries(); i++ ){ 
 				LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() updating object \"" << objects(i)->getName() << "\"");
-		    	if(!updateSimObject(sim, objects(i))){
+		    	if(!updateSimObject(sim, objects(i), timestep)){
 					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable update object \"" << objects(i)->getName() << "\"");
 					LOG_UNDENT;
 					boss->opEnd();

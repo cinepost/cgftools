@@ -13,7 +13,7 @@ class HPI_Object{
 		physbam_object*	getPhysbamObject();
 		int				getUid();
 		virtual	bool	setFromObject(SIM_Object *object, physbam_simulation *sim){ return true; };
-		virtual bool	updateSimulatedObject(SIM_Object *object, physbam_simulation *sim){ return true; };	
+		virtual bool	updateSimulatedObject(SIM_Object *object, physbam_simulation *sim, const SIM_Time &timestep){ return true; };	
 			
 	protected:
 		physbam_object*	pb_object;
