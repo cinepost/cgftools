@@ -76,14 +76,14 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 		SIM_ObjectArray			filtered;
 		SIM_Time				sim_time;
 		UT_String				group, simfilename;
-		physbam_simulation* 	sim;
+		physbam_simulation* 	sim = worlddata->getSimulation();
 		int						i;
 		const SIM_Time 			curr_time = engine.getSimulationTime();
 		
-		sim = worlddata->getSimulation();
 		/// Loop through new objects and add them into sim.
 		if (newobjects.entries() > 0) {	
 			for( i = 0; i < newobjects.entries(); i++ ){
+				
 				if(!worlddata->objectExists(newobjects(i)->getObjectId())){
 					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() setting up new object in sim: " << newobjects(i)->getName());	
 					if(!setupNewSimObject(sim, newobjects(i), curr_time)){
@@ -97,6 +97,17 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 			/// exit with success. we don't want to run actual simulation here
 			boss->opEnd();
 			return SIM_Solver::SIM_SOLVER_SUCCESS;	
+		}
+		
+		/// Loop through baked objects and update their positions if needed.
+		HPI_Object *sim_object = NULL;
+		if (objects.entries() > 0){
+			for( i = 0; i < objects.entries(); i++ ){
+				sim_object = worlddata->getSolidObject(objects(i)->getObjectId());
+				if(sim_object){
+					sim_object->appendKeyframe(objects(i), sim, engine.getSimulationTime());
+				}
+			}
 		}
 		
 		/// Run the simulation for the given time_step

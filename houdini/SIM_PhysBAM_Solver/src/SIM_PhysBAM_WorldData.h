@@ -55,6 +55,7 @@ class SIM_PhysBAM_WorldData : public SIM_Data
 {
 public:
 	std::map<int, physbam_force*>		*getForces();
+	std::map<int, HPI_Object*>			*getObjects();
 	physbam_force						*getForce(int id);
 	HPI_Object							*getSolidObject(int id);
 	bool								objectExists(int id);

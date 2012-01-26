@@ -39,3 +39,15 @@ bool
 HPI_Baked_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *sim, const SIM_Time &timestep){
 	return true;
 }
+
+void
+HPI_Baked_Object::appendKeyframe(SIM_Object *object, physbam_simulation *sim, const SIM_Time &time){
+	const SIM_Position *sim_pos = object->getPosition();
+	UT_Quaternion	orient;
+	UT_Vector3		pos;
+	
+	sim_pos->getOrientation(orient);
+	sim_pos->getPosition(pos);
+	
+	ir.call<void>("add_scripted_body_keyframe", pb_object, time, rigid_body_frame(vf3(pos.x(),pos.y(),pos.z()), vf4(orient.x(),orient.y(),orient.z(),orient.w())));
+}	

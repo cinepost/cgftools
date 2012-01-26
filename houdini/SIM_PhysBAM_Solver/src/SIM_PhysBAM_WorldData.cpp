@@ -30,6 +30,11 @@ SIM_PhysBAM_WorldData::getForces(void){
 	return forces;
 }
 
+std::map<int, HPI_Object*>*
+SIM_PhysBAM_WorldData::getObjects(void){
+	return objects;
+}
+
 bool
 SIM_PhysBAM_WorldData::forceExists(int id){
 	return forces->find( id ) != forces->end();
