@@ -25,6 +25,7 @@ class HPI_Solid_Object : public HPI_Object
 	
 		virtual bool	setFromObject(SIM_Object *object, physbam_simulation *sim);
 		virtual bool	updateSimulatedObject(SIM_Object *object, physbam_simulation *sim, const SIM_Time &timestep);
+		virtual void	appendKeyframe(const SIM_Object *object, physbam_simulation *sim, const SIM_Time &time);
 		HPI_Trimesh*	getTrimesh();
 		
 	private:

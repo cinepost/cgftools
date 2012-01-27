@@ -41,7 +41,7 @@ HPI_Baked_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *
 }
 
 void
-HPI_Baked_Object::appendKeyframe(SIM_Object *object, physbam_simulation *sim, const SIM_Time &time){
+HPI_Baked_Object::appendKeyframe(const SIM_Object *object, physbam_simulation *sim, const SIM_Time &time){
 	const SIM_Position *sim_pos = object->getPosition();
 	UT_Quaternion	orient;
 	UT_Vector3		pos;
@@ -49,5 +49,8 @@ HPI_Baked_Object::appendKeyframe(SIM_Object *object, physbam_simulation *sim, co
 	sim_pos->getOrientation(orient);
 	sim_pos->getPosition(pos);
 	
-	ir.call<void>("add_scripted_body_keyframe", pb_object, time, rigid_body_frame(vf3(pos.x(),pos.y(),pos.z()), vf4(orient.x(),orient.y(),orient.z(),orient.w())));
+	LOG("HPI_Baked_Object::appendKeyframe() appending keyframe for object: " << object->getName() << " at: " << (float)time);	
+	
+	//ir.call<void>("add_scripted_body_keyframe", pb_object, time, rigid_body_frame(vf3(pos.x(),pos.y(),pos.z()), vf4(orient.x(),orient.y(),orient.z(),orient.w())));
+	ir.call<void>("add_scripted_body_keyframe", pb_object, (float)time, rigid_body_frame(vf3(pos.x(),pos.y(),pos.z()), vf4(-orient.z(),orient.y(),orient.x(),orient.w())));
 }	

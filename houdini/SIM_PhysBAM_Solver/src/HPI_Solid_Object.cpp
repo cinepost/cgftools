@@ -196,3 +196,8 @@ HPI_Solid_Object::updateSimulatedObject(SIM_Object *object, physbam_simulation *
 	}
 	return false;
 }
+
+void
+HPI_Solid_Object::appendKeyframe(const SIM_Object *object, physbam_simulation *sim, const SIM_Time &time){
+
+}

@@ -55,3 +55,8 @@ HPI_Ground_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	LOG_UNDENT;				
 	return true;	
 }
+
+void
+HPI_Ground_Object::appendKeyframe(const SIM_Object *object, physbam_simulation *sim, const SIM_Time &time){
+
+}

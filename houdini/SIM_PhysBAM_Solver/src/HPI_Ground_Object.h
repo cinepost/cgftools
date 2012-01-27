@@ -20,7 +20,8 @@ class HPI_Ground_Object : public HPI_Object
 		HPI_Ground_Object();
 		~HPI_Ground_Object();
 	
-		virtual	bool		setFromObject(SIM_Object *object, physbam_simulation *sim);
+		virtual	bool	setFromObject(SIM_Object *object, physbam_simulation *sim);
+		virtual void	appendKeyframe(const SIM_Object *object, physbam_simulation *sim, const SIM_Time &time);
 };
 
 #endif

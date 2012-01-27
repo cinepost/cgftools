@@ -101,11 +101,14 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 		
 		/// Loop through baked objects and update their positions if needed.
 		HPI_Object *sim_object = NULL;
+		SIM_Time 	sample_time;
 		if (objects.entries() > 0){
 			for( i = 0; i < objects.entries(); i++ ){
 				sim_object = worlddata->getSolidObject(objects(i)->getObjectId());
 				if(sim_object){
-					sim_object->appendKeyframe(objects(i), sim, engine.getSimulationTime());
+					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() appending keyframe for object: " << objects(i)->getName());	
+					sample_time = engine.getSimulationTime() + timestep;
+					sim_object->appendKeyframe(engine.getObjectAtTime(*objects(i), sample_time, true), sim, sample_time);
 				}
 			}
 		}
