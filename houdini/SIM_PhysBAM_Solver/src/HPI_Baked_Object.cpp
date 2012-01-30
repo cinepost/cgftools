@@ -25,8 +25,19 @@ HPI_Baked_Object::setFromObject(SIM_Object *object, physbam_simulation *sim){
 	trimesh->setFromObject(object);
 	LOG("Done.");
 	
+	float friction = 0.5f;
+	SIM_PhysicalParms	*scripted_object = SIM_DATA_CAST(object->getNamedSubData("SIM_PhysicalParms"), SIM_PhysicalParms);
+	if(scripted_object){
+		friction = scripted_object->getProperty( SIM_PROPERTY_FRICTION);
+		LOG("Friction: " << friction);
+	}else{
+		LOG("Using default friction: " << friction);
+	}
+	
+
 	LOG("Adding scripted body to simulation...");
 	pb_object = ir.call<physbam_object*>("add_scripted_geometry", sim, *trimesh->getMesh(), *trimesh->getPositions());
+	ir.call<void>("set_rigid_body_friction", pb_object, friction);	
 	LOG("Done.");
 	
 	if(!pb_object)

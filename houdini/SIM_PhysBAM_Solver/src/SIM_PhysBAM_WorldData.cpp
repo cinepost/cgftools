@@ -120,8 +120,8 @@ void SIM_PhysBAM_WorldData::clear(){
 				LOG("SIM_PhysBAM_WorldData::clear() destroying sim: " << simulation);
 				ir.call<void>("destroy_simulation", simulation);
 			}
-			for ( typename std::map<int, HPI_Object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second;};objects->clear();
-			for ( typename std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
+			for ( std::map<int, HPI_Object*>::iterator it = objects->begin(); it != objects->end(); ++it ){delete it->second;};objects->clear();
+			for ( std::map<int, physbam_force*>::iterator it = forces->begin(); it != forces->end(); ++it ){delete it->second;};forces->clear();
 
 			delete 	m_shareCount;
 		}

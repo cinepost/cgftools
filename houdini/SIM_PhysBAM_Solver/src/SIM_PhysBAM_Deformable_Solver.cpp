@@ -100,15 +100,24 @@ SIM_PhysBAM_Deformable_Solver::solveObjectsSubclass ( SIM_Engine &engine, SIM_Ob
 		}
 		
 		/// Loop through baked objects and update their positions if needed.
-		HPI_Object *sim_object = NULL;
-		SIM_Time 	sample_time;
+		HPI_Object 			*sim_object = NULL;
+		const SIM_Object	*sim_obj;
+		SIM_Object *next_obj;
+		
+		const SIM_Time 		sample_time = engine.getSimulationTime() - timestep;
 		if (objects.entries() > 0){
 			for( i = 0; i < objects.entries(); i++ ){
 				sim_object = worlddata->getSolidObject(objects(i)->getObjectId());
 				if(sim_object){
-					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() appending keyframe for object: " << objects(i)->getName());	
-					sample_time = engine.getSimulationTime() + timestep;
-					sim_object->appendKeyframe(engine.getObjectAtTime(*objects(i), sample_time, true), sim, sample_time);
+					sim_obj = objects(i);
+					LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() appending keyframe for object: " << sim_obj->getName() << " at time:" << sample_time);	
+					next_obj = engine.getAffectorAtTime(*objects.findObjectById(objects(i)->getObjectId()), sample_time, true);
+					if(next_obj){
+						LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() next step object is: " << next_obj->getName());
+						sim_object->appendKeyframe(next_obj, sim, sample_time);
+					}else{
+						LOG("SIM_PhysBAM_Deformable_Solver solveObjectsSubclass() unable to get object at time !!!");
+					}
 				}
 			}
 		}
