@@ -374,7 +374,8 @@ class HQrenderDialog( PythonPanel ):
 				job = {}
 				job['name'] = 'Rendering %s script in range %d-%dx%d' % (curScript, frame, frame + frames_per_job - 1, f3)
 				job['shell'] ='bash'
-				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.safe_substitute(NUKEVERSION=nuke.NUKE_VERSION_STRING), frame, frame + frames_per_job - 1, f3, curScript)  
+				NUKE_EXEC = "Nuke%d.%d" % (nuke.NUKE_VERSION_MAJOR, nuke.NUKE_VERSION_RELEASE)
+				job['command'] = '%s -t ~/.nuke/python/hqrender/render.py -s %d -e %d -i %d %s' % (nuke_executable.safe_substitute(NUKEVERSION=nuke.NUKE_VERSION_STRING, NUKEEXEC=NUKE_EXEC), frame, frame + frames_per_job - 1, f3, curScript)  
 				job['environment'] = {
 					"HQ_NK_NODES"	: out_nodes,
 					"HQ_NK_MODE"	: self.hqmode,
@@ -382,6 +383,7 @@ class HQrenderDialog( PythonPanel ):
 					"HQ_NK_SRC_OS"	: OS_ENV
 				}
 				job['triesLeft'] = self._state.getValue('triesLeft',2)
+				job['tags'] = ["single"]
 				job_frames += [job]
 			
 			job_spec = {

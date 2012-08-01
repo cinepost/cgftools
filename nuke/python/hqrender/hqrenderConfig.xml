@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <hqrenderConf>
-	<confItem name="server" type="string" value="node001:5000" />
+	<confItem name="server" type="string" value="master.render.csa2014.ru:5000" />
 
 	<confItem name="custom_range">
 		<confItem name="f1" type="int" value="0" />
@@ -9,19 +9,19 @@
 	</confItem>
 
 	<!--<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke$NUKEVERSION.$HQCLIENTARCH/Nuke" />-->
-	<confItem name="nukexec" type="string" value="$HQROOT/dist/Nuke6.3v4.$HQCLIENTARCH/Nuke" />
+	<confItem name="nukexec" type="string" value="/usr/local/Nuke$NUKEVERSION/$NUKEEXEC" />
 	
 	<confItem name="cross_path">
 		<confItem name="projects">
-			<confItem name="osx" type="string" value="/Volumes/Projects/" />
-			<confItem name="lin" type="string" value="/mnt/Projects/" />
-			<confItem name="win" type="string" value="Z:/" />
+			<confItem name="osx" type="string" value="/serv/projects/" />
+			<confItem name="lin" type="string" value="/serv/projects/" />
+			<confItem name="win" type="string" value="\\serv\projects" />
 		</confItem>
 	</confItem>
 
 	<confItem name="cross_project">
-		<confItem name="osx" type="string" value="/Volumes/Projects/hqshared/temp/nuke" />
-		<confItem name="lin" type="string" value="/mnt/Projects/hqshared/temp/nuke" />
-		<confItem name="win" type="string" value="Z:/hqshared/temp/nuke" />
+		<confItem name="osx" type="string" value="/serv/projects/hqshared/temp/nuke" />
+		<confItem name="lin" type="string" value="/serv/projects/hqshared/temp/nuke" />
+		<confItem name="win" type="string" value="\\serv\projects\hqshared\temp\nuke" />
 	</confItem>
 </hqrenderConf>
